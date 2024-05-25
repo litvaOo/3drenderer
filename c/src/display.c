@@ -63,7 +63,7 @@ void draw_grid(int multiple) {
 void draw_rectangle(int x, int y, int width, int height, uint32_t color) {
   for (int new_y = y; new_y <= height + y; new_y++)
     for (int new_x = x; new_x <= width + x; new_x++)
-      color_buffer[new_y * window_width + new_x] = color;
+      draw_pixel(new_x, new_y, color);
 }
 
 void destroy_window(void) {
