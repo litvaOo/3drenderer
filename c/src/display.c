@@ -72,3 +72,7 @@ void destroy_window(void) {
   SDL_DestroyWindow(window);
   SDL_Quit();
 }
+
+void draw_pixel(int x, int y, uint32_t color) {
+  color_buffer[y * window_width + x] = color;
+}
