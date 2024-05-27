@@ -4,6 +4,9 @@
 #include <SDL2/SDL.h>
 #include <stdint.h>
 
+#define FPS 120
+#define FRAME_TARGET_TIME (1000 / FPS)
+
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;
 extern uint32_t *color_buffer;

@@ -5,6 +5,7 @@
 #include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
 #include <stdint.h>
 
@@ -17,6 +18,8 @@ vec2_t projected_points[N_POINTS];
 vec3_t camera_position = {0, 0, -5};
 vec3_t cube_rotation = {0, 0, 0};
 float fov_factor = 640;
+
+int previous_frame_time = 0;
 
 void process_input(void) {
   SDL_Event event;
@@ -40,6 +43,10 @@ vec2_t project(vec3_t point) {
 }
 
 void update(void) {
+  int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
+  if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
+    SDL_Delay(time_to_wait);
+
   cube_rotation.y += 0.01;
   cube_rotation.x += 0.01;
   cube_rotation.z += 0.01;
