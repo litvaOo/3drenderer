@@ -89,7 +89,8 @@ void setup(void) {
   color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
                                            SDL_TEXTUREACCESS_STREAMING,
                                            window_width, window_height);
-  load_cube_mesh_data();
+  // load_cube_mesh_data();
+  load_mesh_from_file("./assets/f22.obj");
 }
 
 void render(void) {
