@@ -14,11 +14,10 @@
 
 short is_running = -1;
 
-vec3_t camera_position = {0, 0, -5};
+vec3_t camera_position = {0, 0, 0};
 float fov_factor = 1280;
 
 triangle_t *triangles_to_render = NULL;
-
 int previous_frame_time = 0;
 
 void process_input(void) {
@@ -49,9 +48,9 @@ void update(void) {
 
   triangles_to_render = NULL;
 
-  mesh.rotation.y += 0.01;
+  mesh.rotation.y += 0.00;
   mesh.rotation.x += 0.01;
-  mesh.rotation.z += 0.01;
+  mesh.rotation.z += 0.00;
 
   int num_faces = array_length(mesh.faces);
   for (int i = 0; i < num_faces; i++) {
@@ -69,12 +68,23 @@ void update(void) {
       transformed_vertex = vec3_rotate_y(transformed_vertex, mesh.rotation.y);
       transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
 
-      transformed_vertex.z += camera_position.z;
+      transformed_vertex.z += -5;
+      face_vertices[j] = transformed_vertex;
+    }
 
-      vec2_t projected_point = project(transformed_vertex);
+    vec3_t N = vec3_cross(vec3_sub(face_vertices[1], face_vertices[0]),
+                          vec3_sub(face_vertices[2], face_vertices[0]));
 
-      projected_point.x += (window_width / 2);
-      projected_point.y += (window_height / 2);
+    vec3_t CR = vec3_sub(camera_position, face_vertices[0]);
+    if (vec3_dot(N, CR) < 0)
+      continue;
+
+    for (int j = 0; j < 3; j++) {
+
+      vec2_t projected_point = project(face_vertices[j]);
+
+      projected_point.x += (window_width / 2.0);
+      projected_point.y += (window_height / 2.0);
       projected_triangle.points[j] = projected_point;
     }
 
