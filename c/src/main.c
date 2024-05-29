@@ -15,7 +15,7 @@
 short is_running = -1;
 
 vec3_t camera_position = {0, 0, -5};
-float fov_factor = 640;
+float fov_factor = 1280;
 
 triangle_t *triangles_to_render = NULL;
 
