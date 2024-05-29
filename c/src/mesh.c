@@ -44,17 +44,6 @@ void load_cube_mesh_data(void) {
   }
 }
 
-void parse_vertice(char *line) {
-  vec3_t vertex;
-  char *token = strtok(line, " ");
-  vertex.x = atof(token);
-  token = strtok(NULL, " ");
-  vertex.y = atof(token);
-  token = strtok(NULL, " ");
-  vertex.z = atof(token);
-  array_push(mesh.vertices, vertex);
-}
-
 void parse_face(char *line) {
   face_t face;
   char *token1 = strtok(line, " ");
@@ -76,10 +65,22 @@ void load_mesh_from_file(char *filename) {
   while (fgets(line, 255, file)) {
     if (strlen(line) < 2)
       continue;
-    if (line[0] == 'v' && line[1] == ' ')
-      parse_vertice(&line[2]);
-    if (line[0] == 'f')
-      parse_face(&line[2]);
+    if (line[0] == 'v' && line[1] == ' ') {
+      vec3_t vertex;
+      sscanf(&line[2], "%f %f %f", &vertex.x, &vertex.y, &vertex.z);
+      array_push(mesh.vertices, vertex);
+    }
+    if (line[0] == 'f') {
+      int vertex_indices[3];
+      int texture_indices[3];
+      int normal_indices[3];
+      sscanf(&line[2], "%d/%d/%d %d/%d/%d %d/%d/%d", &vertex_indices[0],
+             &texture_indices[0], &normal_indices[0], &vertex_indices[1],
+             &texture_indices[1], &normal_indices[1], &vertex_indices[2],
+             &texture_indices[2], &normal_indices[2]);
+      face_t face = {vertex_indices[0], vertex_indices[1], vertex_indices[2]};
+      array_push(mesh.faces, face);
+    }
     continue;
   }
   fclose(file);
