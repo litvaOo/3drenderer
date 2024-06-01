@@ -77,6 +77,7 @@ void update(void) {
 
     vec3_normalize(&N);
     vec3_t CR = vec3_sub(camera_position, face_vertices[0]);
+
     if (vec3_dot(N, CR) < 0)
       continue;
 
@@ -111,10 +112,16 @@ void render(void) {
 
   for (int i = 0; i < len; i++) {
     triangle_t triangle = triangles_to_render[i];
+    draw_filled_triangle(triangle.points[0].x, triangle.points[0].y,
+                         triangle.points[1].x, triangle.points[1].y,
+                         triangle.points[2].x, triangle.points[2].y,
+                         0xFFFFFFFF);
     draw_triangle(triangle.points[0].x, triangle.points[0].y,
                   triangle.points[1].x, triangle.points[1].y,
-                  triangle.points[2].x, triangle.points[2].y, 0xFFFF00FF);
+                  triangle.points[2].x, triangle.points[2].y, 0xFF000000);
   }
+
+  // draw_filled_triangle(300, 100, 50, 400, 500, 700, 0xFFFFFFFF);
 
   array_free(triangles_to_render);
   render_color_buffer();
