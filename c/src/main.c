@@ -20,6 +20,14 @@ float fov_factor = 1280;
 triangle_t *triangles_to_render = NULL;
 int previous_frame_time = 0;
 
+enum renderOption {
+  WIREFRAME_DOT,
+  WIREFRAME_ONLY,
+  FILL_ONLY,
+  WIREFRAME_FILL
+} renderOption = WIREFRAME_FILL;
+int backface_culling = 1;
+
 void process_input(void) {
   SDL_Event event;
   SDL_PollEvent(&event);
@@ -29,9 +37,34 @@ void process_input(void) {
     is_running = -1;
     break;
   case SDL_KEYDOWN:
-    if (event.key.keysym.sym == SDLK_ESCAPE)
+    if (event.key.keysym.sym == SDLK_ESCAPE) {
       is_running = -1;
-    break;
+      break;
+    }
+    if (event.key.keysym.scancode == 6) {
+      backface_culling = 1;
+      break;
+    }
+    if (event.key.keysym.scancode == 7) {
+      backface_culling = 0;
+      break;
+    }
+    if (event.key.keysym.scancode == 30) {
+      renderOption = WIREFRAME_DOT;
+      break;
+    }
+    if (event.key.keysym.scancode == 31) {
+      renderOption = WIREFRAME_ONLY;
+      break;
+    }
+    if (event.key.keysym.scancode == 32) {
+      renderOption = FILL_ONLY;
+      break;
+    }
+    if (event.key.keysym.scancode == 33) {
+      renderOption = WIREFRAME_FILL;
+      break;
+    }
   }
 }
 
@@ -78,7 +111,7 @@ void update(void) {
     vec3_normalize(&N);
     vec3_t CR = vec3_sub(camera_position, face_vertices[0]);
 
-    if (vec3_dot(N, CR) < 0)
+    if (backface_culling == 1 && vec3_dot(N, CR) < 0)
       continue;
 
     for (int j = 0; j < 3; j++) {
@@ -111,16 +144,24 @@ void render(void) {
 
   for (int i = 0; i < len; i++) {
     triangle_t triangle = triangles_to_render[i];
-    draw_filled_triangle(triangle.points[0].x, triangle.points[0].y,
-                         triangle.points[1].x, triangle.points[1].y,
-                         triangle.points[2].x, triangle.points[2].y,
-                         0xFFFFFFFF);
-    draw_triangle(triangle.points[0].x, triangle.points[0].y,
-                  triangle.points[1].x, triangle.points[1].y,
-                  triangle.points[2].x, triangle.points[2].y, 0xFF000000);
+    if (renderOption == WIREFRAME_FILL || renderOption == FILL_ONLY)
+      draw_filled_triangle(triangle.points[0].x, triangle.points[0].y,
+                           triangle.points[1].x, triangle.points[1].y,
+                           triangle.points[2].x, triangle.points[2].y,
+                           0x696969);
+    if (renderOption != FILL_ONLY)
+      draw_triangle(triangle.points[0].x, triangle.points[0].y,
+                    triangle.points[1].x, triangle.points[1].y,
+                    triangle.points[2].x, triangle.points[2].y, 0xFF00FF00);
+    if (renderOption == WIREFRAME_DOT) {
+      draw_rectangle(triangle.points[0].x - 1, triangle.points[0].y - 1, 3, 3,
+                     0xFFFF0000);
+      draw_rectangle(triangle.points[1].x - 1, triangle.points[1].y - 1, 3, 3,
+                     0xFFFF0000);
+      draw_rectangle(triangle.points[2].x - 1, triangle.points[2].y - 1, 3, 3,
+                     0xFFFF0000);
+    }
   }
-
-  // draw_filled_triangle(300, 100, 50, 400, 500, 700, 0xFFFFFFFF);
 
   array_free(triangles_to_render);
   render_color_buffer();
