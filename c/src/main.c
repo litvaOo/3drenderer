@@ -90,7 +90,6 @@ void update(void) {
       projected_triangle.points[j] = projected_point;
     }
 
-    // triangles_to_render[i] = projected_triangle;
     array_push(triangles_to_render, projected_triangle);
   }
 }
