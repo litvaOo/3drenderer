@@ -64,9 +64,9 @@ void update(void) {
 
     for (int j = 0; j < 3; j++) {
       vec3_t transformed_vertex = face_vertices[j];
-      transformed_vertex = vec3_rotate_x(transformed_vertex, mesh.rotation.x);
-      transformed_vertex = vec3_rotate_y(transformed_vertex, mesh.rotation.y);
-      transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
+      vec3_rotate_x(&transformed_vertex, mesh.rotation.x);
+      vec3_rotate_y(&transformed_vertex, mesh.rotation.y);
+      vec3_rotate_z(&transformed_vertex, mesh.rotation.z);
 
       transformed_vertex.z += -5;
       face_vertices[j] = transformed_vertex;
@@ -75,6 +75,7 @@ void update(void) {
     vec3_t N = vec3_cross(vec3_sub(face_vertices[1], face_vertices[0]),
                           vec3_sub(face_vertices[2], face_vertices[0]));
 
+    vec3_normalize(&N);
     vec3_t CR = vec3_sub(camera_position, face_vertices[0]);
     if (vec3_dot(N, CR) < 0)
       continue;

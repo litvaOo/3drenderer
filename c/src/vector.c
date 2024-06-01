@@ -1,22 +1,22 @@
 #include "vector.h"
 #include <math.h>
 
-vec3_t vec3_rotate_x(vec3_t v, float angle) {
-  vec3_t rotated_vector = {v.x, v.y * cos(angle) - v.z * sin(angle),
-                           v.z * cos(angle) + v.y * sin(angle)};
-  return rotated_vector;
+void vec3_rotate_x(vec3_t *v, float angle) {
+  float y = v->y;
+  v->y = v->y * cos(angle) - v->z * sin(angle);
+  v->z = v->z * cos(angle) + y * sin(angle);
 }
 
-vec3_t vec3_rotate_y(vec3_t v, float angle) {
-  vec3_t rotated_vector = {v.x * cos(angle) - v.z * sin(angle), v.y,
-                           v.z * cos(angle) + v.x * sin(angle)};
-  return rotated_vector;
+void vec3_rotate_y(vec3_t *v, float angle) {
+  float x = v->x;
+  v->x = v->x * cos(angle) - v->z * sin(angle);
+  v->z = v->z * cos(angle) + x * sin(angle);
 }
 
-vec3_t vec3_rotate_z(vec3_t v, float angle) {
-  vec3_t rotated_vector = {v.x * cos(angle) - v.y * sin(angle),
-                           v.y * cos(angle) + v.x * sin(angle), v.z};
-  return rotated_vector;
+void vec3_rotate_z(vec3_t *v, float angle) {
+  float x = v->x;
+  v->x = v->x * cos(angle) - v->y * sin(angle);
+  v->y = v->y * cos(angle) + x * sin(angle);
 }
 
 float vec2_length(vec2_t v) { return sqrtf(v.x * v.x + v.y * v.y); }
@@ -57,3 +57,20 @@ vec3_t vec3_cross(vec3_t a, vec3_t b) {
 }
 
 float vec3_dot(vec3_t a, vec3_t b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+
+void vec3_normalize(vec3_t *v) {
+  float len = vec3_length(*v);
+  if (len == 0)
+    return;
+  v->x /= len;
+  v->y /= len;
+  v->z /= len;
+}
+
+void vec2_normalize(vec2_t *v) {
+  float len = vec2_length(*v);
+  if (len == 0)
+    return;
+  v->x /= len;
+  v->y /= len;
+}

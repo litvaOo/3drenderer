@@ -14,9 +14,9 @@ typedef struct {
   float z;
 } vec3_t;
 
-vec3_t vec3_rotate_x(vec3_t v, float angle);
-vec3_t vec3_rotate_y(vec3_t v, float angle);
-vec3_t vec3_rotate_z(vec3_t v, float angle);
+void vec3_rotate_x(vec3_t *v, float angle);
+void vec3_rotate_y(vec3_t *v, float angle);
+void vec3_rotate_z(vec3_t *v, float angle);
 float vec3_length(vec3_t v);
 
 float vec2_length(vec2_t v);
@@ -31,4 +31,6 @@ vec2_t vec2_div(vec2_t v, float factor);
 vec3_t vec3_div(vec3_t v, float factor);
 vec3_t vec3_cross(vec3_t a, vec3_t b);
 float vec3_dot(vec3_t a, vec3_t b);
+void vec3_normalize(vec3_t *v);
+void vec2_normalize(vec2_t *v);
 #endif

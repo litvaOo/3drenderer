@@ -1,6 +1,9 @@
 build:
 	gcc -Wall -g -std=c99 ./src/*.c -lSDL2 -lm -o renderer
 
+build-mac:
+	arch -x86_64 gcc -Wall -g -std=c99 ./src/*.c -I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -l SDL2 -lm -o renderer
+
 run:
 	./renderer
 
