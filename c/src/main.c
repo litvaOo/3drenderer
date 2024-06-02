@@ -81,9 +81,9 @@ void update(void) {
 
   triangles_to_render = NULL;
 
-  mesh.rotation.y += 0.00;
+  mesh.rotation.y += 0.01;
   mesh.rotation.x += 0.01;
-  mesh.rotation.z += 0.00;
+  mesh.rotation.z += 0.01;
 
   int num_faces = array_length(mesh.faces);
   for (int i = 0; i < num_faces; i++) {
@@ -92,8 +92,6 @@ void update(void) {
     face_vertices[0] = mesh.vertices[mesh_face.a - 1];
     face_vertices[1] = mesh.vertices[mesh_face.b - 1];
     face_vertices[2] = mesh.vertices[mesh_face.c - 1];
-
-    triangle_t projected_triangle;
 
     for (int j = 0; j < 3; j++) {
       vec3_t transformed_vertex = face_vertices[j];
@@ -114,15 +112,23 @@ void update(void) {
     if (backface_culling == 1 && vec3_dot(N, CR) < 0)
       continue;
 
+    vec2_t projected_points[3];
     for (int j = 0; j < 3; j++) {
 
-      vec2_t projected_point = project(face_vertices[j]);
+      projected_points[j] = project(face_vertices[j]);
 
-      projected_point.x += (window_width / 2.0);
-      projected_point.y += (window_height / 2.0);
-      projected_triangle.points[j] = projected_point;
+      projected_points[j].x += (window_width / 2.0);
+      projected_points[j].y += (window_height / 2.0);
     }
 
+    triangle_t projected_triangle = {
+        .points =
+            {
+                {projected_points[0].x, projected_points[0].y},
+                {projected_points[1].x, projected_points[1].y},
+                {projected_points[2].x, projected_points[2].y},
+            },
+        .color = mesh_face.color};
     array_push(triangles_to_render, projected_triangle);
   }
 }
@@ -133,8 +139,8 @@ void setup(void) {
   color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
                                            SDL_TEXTUREACCESS_STREAMING,
                                            window_width, window_height);
-  // load_cube_mesh_data();
-  load_mesh_from_file("./assets/f22.obj");
+  load_cube_mesh_data();
+  // load_mesh_from_file("./assets/f22.obj");
 }
 
 void render(void) {
@@ -148,18 +154,18 @@ void render(void) {
       draw_filled_triangle(triangle.points[0].x, triangle.points[0].y,
                            triangle.points[1].x, triangle.points[1].y,
                            triangle.points[2].x, triangle.points[2].y,
-                           0x696969);
+                           triangle.color);
     if (renderOption != FILL_ONLY)
       draw_triangle(triangle.points[0].x, triangle.points[0].y,
                     triangle.points[1].x, triangle.points[1].y,
-                    triangle.points[2].x, triangle.points[2].y, 0xFF00FF00);
+                    triangle.points[2].x, triangle.points[2].y, triangle.color);
     if (renderOption == WIREFRAME_DOT) {
       draw_rectangle(triangle.points[0].x - 1, triangle.points[0].y - 1, 3, 3,
-                     0xFFFF0000);
+                     triangle.color);
       draw_rectangle(triangle.points[1].x - 1, triangle.points[1].y - 1, 3, 3,
-                     0xFFFF0000);
+                     triangle.color);
       draw_rectangle(triangle.points[2].x - 1, triangle.points[2].y - 1, 3, 3,
-                     0xFFFF0000);
+                     triangle.color);
     }
   }
 
