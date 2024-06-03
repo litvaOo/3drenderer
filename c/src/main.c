@@ -74,6 +74,33 @@ vec2_t project(vec3_t point) {
   return projected_point;
 }
 
+int partition(triangle_t *triangles, int low, int high) {
+  triangle_t pivot = triangles[(low + high) / 2];
+  int i = low;
+  int j = high;
+  while (1) {
+    while (triangles[i].avg_depth < pivot.avg_depth)
+      i++;
+    while (triangles[j].avg_depth > pivot.avg_depth)
+      j--;
+    if (i >= j)
+      return j;
+    triangle_t tmp = triangles[i];
+    triangles[i] = triangles[j];
+    triangles[j] = tmp;
+    i++;
+    j--;
+  }
+}
+
+void sort_triangles(triangle_t *triangles, int low, int high) {
+  if (low >= 0 && high >= 0 && low < high) {
+    int mid = partition(triangles, low, high);
+    sort_triangles(triangles, low, mid);
+    sort_triangles(triangles, mid + 1, high);
+  }
+}
+
 void update(void) {
   int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
   if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
@@ -128,9 +155,13 @@ void update(void) {
                 {projected_points[1].x, projected_points[1].y},
                 {projected_points[2].x, projected_points[2].y},
             },
-        .color = mesh_face.color};
+        .color = mesh_face.color,
+        .avg_depth =
+            (face_vertices[0].z + face_vertices[1].z + face_vertices[2].z) /
+            3.0};
     array_push(triangles_to_render, projected_triangle);
   }
+  sort_triangles(triangles_to_render, 0, array_length(triangles_to_render) - 1);
 }
 
 void setup(void) {
@@ -139,8 +170,8 @@ void setup(void) {
   color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
                                            SDL_TEXTUREACCESS_STREAMING,
                                            window_width, window_height);
-  load_cube_mesh_data();
-  // load_mesh_from_file("./assets/f22.obj");
+  // load_cube_mesh_data();
+  load_mesh_from_file("./assets/f22.obj");
 }
 
 void render(void) {
