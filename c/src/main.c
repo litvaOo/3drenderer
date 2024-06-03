@@ -189,14 +189,14 @@ void render(void) {
     if (renderOption != FILL_ONLY)
       draw_triangle(triangle.points[0].x, triangle.points[0].y,
                     triangle.points[1].x, triangle.points[1].y,
-                    triangle.points[2].x, triangle.points[2].y, triangle.color);
+                    triangle.points[2].x, triangle.points[2].y, 0x696969);
     if (renderOption == WIREFRAME_DOT) {
       draw_rectangle(triangle.points[0].x - 1, triangle.points[0].y - 1, 3, 3,
-                     triangle.color);
+                     0xFFFF0000);
       draw_rectangle(triangle.points[1].x - 1, triangle.points[1].y - 1, 3, 3,
-                     triangle.color);
+                     0xFFFF0000);
       draw_rectangle(triangle.points[2].x - 1, triangle.points[2].y - 1, 3, 3,
-                     triangle.color);
+                     0xFFFF0000);
     }
   }
 
