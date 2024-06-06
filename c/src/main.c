@@ -11,12 +11,18 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
+#include <math.h>
 #include <stdint.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 short is_running = -1;
 
 vec3_t camera_position = {0, 0, 0};
-float fov_factor = 1280;
+
+mat4_t projection_matrix;
 
 triangle_t *triangles_to_render = NULL;
 int previous_frame_time = 0;
@@ -69,12 +75,6 @@ void process_input(void) {
   }
 }
 
-vec2_t project(vec3_t point) {
-  vec2_t projected_point = {(fov_factor * point.x) / point.z,
-                            (fov_factor * point.y) / point.z};
-  return projected_point;
-}
-
 int partition(triangle_t *triangles, int low, int high) {
   triangle_t pivot = triangles[(low + high) / 2];
   int i = low;
@@ -109,14 +109,14 @@ void update(void) {
 
   triangles_to_render = NULL;
 
-  mesh.rotation.y += 0.01;
+  // mesh.rotation.y += 0.01;
   mesh.rotation.x += 0.01;
-  mesh.rotation.z += 0.01;
-
-  mesh.scale.x += 0.002;
-  mesh.scale.y += 0.001;
-
-  mesh.translation.x += 0.01;
+  // mesh.rotation.z += 0.01;
+  //
+  // mesh.scale.x += 0.002;
+  // mesh.scale.y += 0.001;
+  //
+  // mesh.translation.x += 0.01;
   mesh.translation.z = 5;
 
   mat4_t scale_matrix =
@@ -160,11 +160,13 @@ void update(void) {
     if (backface_culling == 1 && vec3_dot(N, CR) < 0)
       continue;
 
-    vec2_t projected_points[3];
+    vec4_t projected_points[3];
     for (int j = 0; j < 3; j++) {
+      projected_points[j] = mat4_mul_vec4_project(
+          projection_matrix, vec4_from_vec3(face_vertices[j]));
 
-      projected_points[j] = project(face_vertices[j]);
-
+      projected_points[j].x *= (window_width / 2.0);
+      projected_points[j].y *= (window_height / 2.0);
       projected_points[j].x += (window_width / 2.0);
       projected_points[j].y += (window_height / 2.0);
     }
@@ -191,6 +193,10 @@ void setup(void) {
   color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
                                            SDL_TEXTUREACCESS_STREAMING,
                                            window_width, window_height);
+  float fov = M_PI / 3.0;
+  projection_matrix = mat4_make_perspective(
+      fov, (float)window_height / (float)window_width, 0.1, 100.0);
+
   // load_cube_mesh_data();
   load_mesh_from_file("./assets/f22.obj");
 }
