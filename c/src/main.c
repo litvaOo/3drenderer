@@ -1,5 +1,6 @@
 #include "array.h"
 #include "display.h"
+#include "lighting.h"
 #include "matrix.h"
 #include "mesh.h"
 #include "triangle.h"
@@ -13,7 +14,6 @@
 #include <SDL2/SDL_video.h>
 #include <math.h>
 #include <stdint.h>
-
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -23,6 +23,8 @@ short is_running = -1;
 vec3_t camera_position = {0, 0, 0};
 
 mat4_t projection_matrix;
+
+light_t light = {{0, 0, 1}};
 
 triangle_t *triangles_to_render = NULL;
 int previous_frame_time = 0;
@@ -109,7 +111,7 @@ void update(void) {
 
   triangles_to_render = NULL;
 
-  // mesh.rotation.y += 0.01;
+  mesh.rotation.y += 0.01;
   mesh.rotation.x += 0.01;
   // mesh.rotation.z += 0.01;
   //
@@ -117,7 +119,7 @@ void update(void) {
   // mesh.scale.y += 0.001;
   //
   // mesh.translation.x += 0.01;
-  mesh.translation.z = 5;
+  mesh.translation.z = -5;
 
   mat4_t scale_matrix =
       mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
@@ -154,6 +156,8 @@ void update(void) {
     vec3_t N = vec3_cross(vec3_sub(face_vertices[1], face_vertices[0]),
                           vec3_sub(face_vertices[2], face_vertices[0]));
 
+    uint32_t color = light_apply_intensity(
+        mesh_face.color, (vec3_dot(light.direction, N) + 1) / 2.0);
     vec3_normalize(&N);
     vec3_t CR = vec3_sub(camera_position, face_vertices[0]);
 
@@ -178,7 +182,7 @@ void update(void) {
                 {projected_points[1].x, projected_points[1].y},
                 {projected_points[2].x, projected_points[2].y},
             },
-        .color = mesh_face.color,
+        .color = color,
         .avg_depth =
             (face_vertices[0].z + face_vertices[1].z + face_vertices[2].z) /
             3.0};
@@ -196,7 +200,10 @@ void setup(void) {
   float fov = M_PI / 3.0;
   projection_matrix = mat4_make_perspective(
       fov, (float)window_height / (float)window_width, 0.1, 100.0);
-
+  light.direction.z = 5;
+  light.direction.y = window_height / 2.0;
+  light.direction.x = window_width / 2.0;
+  vec3_normalize(&light.direction);
   // load_cube_mesh_data();
   load_mesh_from_file("./assets/f22.obj");
 }

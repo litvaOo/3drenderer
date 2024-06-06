@@ -79,7 +79,7 @@ void load_mesh_from_file(char *filename) {
              &texture_indices[1], &normal_indices[1], &vertex_indices[2],
              &texture_indices[2], &normal_indices[2]);
       face_t face = {vertex_indices[0], vertex_indices[1], vertex_indices[2],
-                     0xFF00FF00};
+                     0xFFFFFFFF};
       array_push(mesh.faces, face);
     }
     continue;
