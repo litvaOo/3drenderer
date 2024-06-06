@@ -74,3 +74,6 @@ void vec2_normalize(vec2_t *v) {
   v->x /= len;
   v->y /= len;
 }
+
+vec4_t vec4_from_vec3(vec3_t v) { return (vec4_t){v.x, v.y, v.z, 1}; }
+vec3_t vec3_from_vec4(vec4_t v) { return (vec3_t){v.x, v.y, v.z}; }
