@@ -156,8 +156,6 @@ void update(void) {
     vec3_t N = vec3_cross(vec3_sub(face_vertices[1], face_vertices[0]),
                           vec3_sub(face_vertices[2], face_vertices[0]));
 
-    uint32_t color = light_apply_intensity(
-        mesh_face.color, (vec3_dot(light.direction, N) + 1) / 2.0);
     vec3_normalize(&N);
     vec3_t CR = vec3_sub(camera_position, face_vertices[0]);
 
@@ -175,6 +173,10 @@ void update(void) {
       projected_points[j].y += (window_height / 2.0);
     }
 
+    float light_intensity = vec3_dot(N, light.direction);
+
+    uint32_t triangle_color =
+        light_apply_intensity(mesh_face.color, light_intensity);
     triangle_t projected_triangle = {
         .points =
             {
@@ -182,7 +184,7 @@ void update(void) {
                 {projected_points[1].x, projected_points[1].y},
                 {projected_points[2].x, projected_points[2].y},
             },
-        .color = color,
+        .color = triangle_color,
         .avg_depth =
             (face_vertices[0].z + face_vertices[1].z + face_vertices[2].z) /
             3.0};
@@ -200,9 +202,9 @@ void setup(void) {
   float fov = M_PI / 3.0;
   projection_matrix = mat4_make_perspective(
       fov, (float)window_height / (float)window_width, 0.1, 100.0);
-  light.direction.z = 5;
-  light.direction.y = window_height / 2.0;
-  light.direction.x = window_width / 2.0;
+  light.direction.z = 1;
+  light.direction.y = 0;
+  light.direction.x = 0;
   vec3_normalize(&light.direction);
   // load_cube_mesh_data();
   load_mesh_from_file("./assets/f22.obj");
