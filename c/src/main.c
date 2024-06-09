@@ -111,9 +111,12 @@ void update(void) {
 
   triangles_to_render = NULL;
 
+  // mesh.rotation.y = 100.0;
+  // mesh.rotation.x = 100.0;
+  // mesh.rotation.z = 100.0;
   mesh.rotation.y += 0.01;
   mesh.rotation.x += 0.01;
-  // mesh.rotation.z += 0.01;
+  mesh.rotation.z += 0.01;
   //
   // mesh.scale.x += 0.002;
   // mesh.scale.y += 0.001;
@@ -138,7 +141,10 @@ void update(void) {
     face_vertices[0] = mesh.vertices[mesh_face.a - 1];
     face_vertices[1] = mesh.vertices[mesh_face.b - 1];
     face_vertices[2] = mesh.vertices[mesh_face.c - 1];
-
+    vec3_t normals[3];
+    normals[0] = mesh.vertice_normals[mesh_face.normals[0] - 1];
+    normals[1] = mesh.vertice_normals[mesh_face.normals[1] - 1];
+    normals[2] = mesh.vertice_normals[mesh_face.normals[2] - 1];
     for (int j = 0; j < 3; j++) {
       vec4_t transformed_vertex = vec4_from_vec3(face_vertices[j]);
 
@@ -151,6 +157,12 @@ void update(void) {
       transformed_vertex = mat4_mul_vec4(world_matrix, transformed_vertex);
 
       face_vertices[j] = vec3_from_vec4(transformed_vertex);
+      mat4_t rotation_matrix = mat4_identity();
+      rotation_matrix = mat4_mul_mat4(rotation_matrix_z, rotation_matrix);
+      rotation_matrix = mat4_mul_mat4(rotation_matrix_y, rotation_matrix);
+      rotation_matrix = mat4_mul_mat4(rotation_matrix_x, rotation_matrix);
+      normals[j] = vec3_from_vec4(
+          mat4_mul_vec4(rotation_matrix, vec4_from_vec3(normals[j])));
     }
 
     vec3_t N = vec3_cross(vec3_sub(face_vertices[1], face_vertices[0]),
@@ -173,10 +185,10 @@ void update(void) {
       projected_points[j].y += (window_height / 2.0);
     }
 
-    float light_intensity = vec3_dot(N, light.direction);
-
-    uint32_t triangle_color =
-        light_apply_intensity(mesh_face.color, light_intensity);
+    // float light_intensity = vec3_dot(N, light.direction);
+    //
+    // uint32_t triangle_color =
+    //     light_apply_intensity(mesh_face.color, light_intensity);
     triangle_t projected_triangle = {
         .points =
             {
@@ -184,7 +196,10 @@ void update(void) {
                 {projected_points[1].x, projected_points[1].y},
                 {projected_points[2].x, projected_points[2].y},
             },
-        .color = triangle_color,
+        .color = mesh_face.color,
+        .intensities = {vec3_dot(normals[0], light.direction),
+                        vec3_dot(normals[1], light.direction),
+                        vec3_dot(normals[2], light.direction)},
         .avg_depth =
             (face_vertices[0].z + face_vertices[1].z + face_vertices[2].z) /
             3.0};
@@ -208,6 +223,7 @@ void setup(void) {
   vec3_normalize(&light.direction);
   // load_cube_mesh_data();
   load_mesh_from_file("./assets/f22.obj");
+  // load_mesh_from_file("./assets/cube.obj");
 }
 
 void render(void) {
@@ -218,10 +234,7 @@ void render(void) {
   for (int i = 0; i < len; i++) {
     triangle_t triangle = triangles_to_render[i];
     if (renderOption == WIREFRAME_FILL || renderOption == FILL_ONLY)
-      draw_filled_triangle(triangle.points[0].x, triangle.points[0].y,
-                           triangle.points[1].x, triangle.points[1].y,
-                           triangle.points[2].x, triangle.points[2].y,
-                           triangle.color);
+      draw_filled_triangle(triangle);
     if (renderOption != FILL_ONLY)
       draw_triangle(triangle.points[0].x, triangle.points[0].y,
                     triangle.points[1].x, triangle.points[1].y,

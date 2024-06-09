@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-mesh_t mesh = {NULL, NULL, {0, 0, 0}, {1.0, 1.0, 1.0}, {0, 0, 0}};
+mesh_t mesh = {NULL, NULL, NULL, {0, 0, 0}, {1.0, 1.0, 1.0}, {0, 0, 0}};
 
 vec3_t cube_vertices[N_CUBE_VERTICES] = {
     {-1, -1, -1}, {-1, 1, -1}, {1, 1, -1}, {1, -1, -1},
@@ -65,10 +65,17 @@ void load_mesh_from_file(char *filename) {
   while (fgets(line, 255, file)) {
     if (strlen(line) < 2)
       continue;
-    if (line[0] == 'v' && line[1] == ' ') {
-      vec3_t vertex;
-      sscanf(&line[2], "%f %f %f", &vertex.x, &vertex.y, &vertex.z);
-      array_push(mesh.vertices, vertex);
+    if (line[0] == 'v') {
+      if (line[1] == ' ') {
+        vec3_t vertex;
+        sscanf(&line[2], "%f %f %f", &vertex.x, &vertex.y, &vertex.z);
+        array_push(mesh.vertices, vertex);
+      }
+      if (line[1] == 'n') {
+        vec3_t normal;
+        sscanf(&line[2], "%f %f %f", &normal.x, &normal.y, &normal.z);
+        array_push(mesh.vertice_normals, normal);
+      }
     }
     if (line[0] == 'f') {
       int vertex_indices[3];
@@ -78,8 +85,9 @@ void load_mesh_from_file(char *filename) {
              &texture_indices[0], &normal_indices[0], &vertex_indices[1],
              &texture_indices[1], &normal_indices[1], &vertex_indices[2],
              &texture_indices[2], &normal_indices[2]);
-      face_t face = {vertex_indices[0], vertex_indices[1], vertex_indices[2],
-                     0xFFFFFFFF};
+      face_t face = {
+          vertex_indices[0], vertex_indices[1], vertex_indices[2], 0xFFFFFFFF,
+          .normals = {normal_indices[0], normal_indices[1], normal_indices[2]}};
       array_push(mesh.faces, face);
     }
     continue;
