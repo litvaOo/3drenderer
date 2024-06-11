@@ -1,6 +1,7 @@
 #include "triangle.h"
 #include "display.h"
 #include "lighting.h"
+#include "texture.h"
 #include "vector.h"
 #include <math.h>
 #include <stdint.h>
@@ -17,12 +18,135 @@ void float_swap(float *a, float *b) {
   *a = *b;
   *b = tmp;
 }
-// float lerp(float v0, float v1, float t) { return v0 + t * (v1 - v0); }
+void int_swap(int *a, int *b) {
+  int tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
+
+void tex2_swap(tex2_t *a, tex2_t *b) {
+  tex2_t tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
+
 float lerp(float v0, float v1, float t) { return (1 - t) * v0 + t * v1; }
 
 float two_points_distance(vec2_t a, vec2_t b) {
   return sqrtf((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
+
+void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
+  if (triangle.points[0].y > triangle.points[1].y) {
+    vec2_swap(&triangle.points[0], &triangle.points[1]);
+    float_swap(&triangle.intensities[0], &triangle.intensities[1]);
+    tex2_swap(&triangle.texcoords[0], &triangle.texcoords[1]);
+  }
+  if (triangle.points[1].y > triangle.points[2].y) {
+    vec2_swap(&triangle.points[1], &triangle.points[2]);
+    float_swap(&triangle.intensities[2], &triangle.intensities[1]);
+    tex2_swap(&triangle.texcoords[1], &triangle.texcoords[2]);
+  }
+  if (triangle.points[0].y > triangle.points[1].y) {
+    vec2_swap(&triangle.points[0], &triangle.points[1]);
+    float_swap(&triangle.intensities[0], &triangle.intensities[1]);
+    tex2_swap(&triangle.texcoords[0], &triangle.texcoords[1]);
+  }
+
+  // flat bottom triangle
+  float inv_slope1 = 0;
+  float inv_slope2 = 0;
+
+  if (triangle.points[0].y != triangle.points[1].y)
+    inv_slope1 = (float)(triangle.points[1].x - triangle.points[0].x) /
+                 fabs(triangle.points[1].y - triangle.points[0].y);
+  if (triangle.points[0].y != triangle.points[2].y)
+    inv_slope2 = (float)(triangle.points[2].x - triangle.points[0].x) /
+                 fabs(triangle.points[2].y - triangle.points[0].y);
+
+  if (triangle.points[1].y != triangle.points[0].y)
+    for (int y = triangle.points[0].y; y <= triangle.points[1].y; y++) {
+      int x_start =
+          triangle.points[1].x + (y - triangle.points[1].y) * inv_slope1;
+      int x_end =
+          triangle.points[0].x + (y - triangle.points[0].y) * inv_slope2;
+      if (x_start > x_end) {
+        int_swap(&x_start, &x_end);
+      }
+      int delta = x_end - x_start;
+      float t1 = two_points_distance(
+                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
+                     (vec2_t){x_start, y}) /
+                 two_points_distance(
+                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
+                     (vec2_t){triangle.points[1].x, triangle.points[1].y});
+
+      float i1 = lerp(triangle.intensities[0], triangle.intensities[1], t1);
+      float t2 = two_points_distance(
+                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
+                     (vec2_t){x_end, y}) /
+                 two_points_distance(
+                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
+                     (vec2_t){triangle.points[2].x, triangle.points[2].y});
+
+      float i2 = lerp(triangle.intensities[0], triangle.intensities[2], t2);
+      uint32_t color = 0xFFFF00FF;
+      for (int x = x_start; x < x_end; x++) {
+        float t = (float)(x - x_start) / delta;
+        float i3 = lerp(i1, i2, t);
+        uint32_t new_color =
+            light_apply_intensity((x % 8 && y % 8) ? color : 0xFF0000FF, i3);
+        draw_pixel(x, y, new_color);
+      }
+    }
+
+  // flat top triangle
+  inv_slope1 = 0;
+  inv_slope2 = 0;
+
+  if (triangle.points[2].y != triangle.points[1].y)
+    inv_slope1 = (float)(triangle.points[2].x - triangle.points[1].x) /
+                 fabs(triangle.points[2].y - triangle.points[1].y);
+  if (triangle.points[0].y != triangle.points[2].y)
+    inv_slope2 = (float)(triangle.points[2].x - triangle.points[0].x) /
+                 fabs(triangle.points[2].y - triangle.points[0].y);
+
+  if (triangle.points[2].y != triangle.points[1].y)
+    for (int y = triangle.points[1].y; y <= triangle.points[2].y; y++) {
+      int x_start =
+          triangle.points[1].x + (y - triangle.points[1].y) * inv_slope1;
+      int x_end =
+          triangle.points[0].x + (y - triangle.points[0].y) * inv_slope2;
+      if (x_start > x_end) {
+        int_swap(&x_start, &x_end);
+      }
+      int delta = x_end - x_start;
+      float t1 = two_points_distance(
+                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
+                     (vec2_t){x_start, y}) /
+                 two_points_distance(
+                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
+                     (vec2_t){triangle.points[1].x, triangle.points[1].y});
+
+      float i1 = lerp(triangle.intensities[0], triangle.intensities[1], t1);
+      float t2 = two_points_distance(
+                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
+                     (vec2_t){x_end, y}) /
+                 two_points_distance(
+                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
+                     (vec2_t){triangle.points[2].x, triangle.points[2].y});
+
+      float i2 = lerp(triangle.intensities[0], triangle.intensities[2], t2);
+      uint32_t color = 0xFFFF00FF;
+      for (int x = x_start; x < x_end; x++) {
+        float t = (float)(x - x_start) / delta;
+        float i3 = lerp(i1, i2, t);
+        uint32_t new_color =
+            light_apply_intensity((x % 8 && y % 8) ? color : 0xFF0000FF, i3);
+        draw_pixel(x, y, new_color);
+      }
+    }
+};
 
 void draw_filled_triangle(triangle_t triangle) {
   if (triangle.points[0].y > triangle.points[1].y) {

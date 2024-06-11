@@ -3,6 +3,7 @@
 #include "lighting.h"
 #include "matrix.h"
 #include "mesh.h"
+#include "texture.h"
 #include "triangle.h"
 #include "vector.h"
 #include <SDL2/SDL.h>
@@ -33,7 +34,9 @@ enum renderOption {
   WIREFRAME_DOT,
   WIREFRAME_ONLY,
   FILL_ONLY,
-  WIREFRAME_FILL
+  WIREFRAME_FILL,
+  TEXTURED_ONLY,
+  WIREFRAME_TEXTURED
 } renderOption = WIREFRAME_FILL;
 int backface_culling = 1;
 
@@ -72,6 +75,14 @@ void process_input(void) {
     }
     if (event.key.keysym.scancode == 33) {
       renderOption = WIREFRAME_FILL;
+      break;
+    }
+    if (event.key.keysym.scancode == 34) {
+      renderOption = TEXTURED_ONLY;
+      break;
+    }
+    if (event.key.keysym.scancode == 35) {
+      renderOption = WIREFRAME_TEXTURED;
       break;
     }
   }
@@ -114,9 +125,9 @@ void update(void) {
   // mesh.rotation.y = 100.0;
   // mesh.rotation.x = 100.0;
   // mesh.rotation.z = 100.0;
-  mesh.rotation.y += 0.01;
+  // mesh.rotation.y += 0.01;
   mesh.rotation.x += 0.01;
-  mesh.rotation.z += 0.01;
+  // mesh.rotation.z += 0.01;
   //
   // mesh.scale.x += 0.002;
   // mesh.scale.y += 0.001;
@@ -181,20 +192,26 @@ void update(void) {
 
       projected_points[j].x *= (window_width / 2.0);
       projected_points[j].y *= (window_height / 2.0);
+
+      projected_points[j].y *= -1;
+
       projected_points[j].x += (window_width / 2.0);
       projected_points[j].y += (window_height / 2.0);
     }
 
-    // float light_intensity = vec3_dot(N, light.direction);
-    //
-    // uint32_t triangle_color =
-    //     light_apply_intensity(mesh_face.color, light_intensity);
     triangle_t projected_triangle = {
         .points =
             {
                 {projected_points[0].x, projected_points[0].y},
                 {projected_points[1].x, projected_points[1].y},
                 {projected_points[2].x, projected_points[2].y},
+            },
+
+        .texcoords =
+            {
+                {mesh_face.a_uv.u, mesh_face.a_uv.v},
+                {mesh_face.b_uv.u, mesh_face.b_uv.v},
+                {mesh_face.c_uv.u, mesh_face.c_uv.v},
             },
         .color = mesh_face.color,
         .intensities = {vec3_dot(normals[0], light.direction),
@@ -221,8 +238,9 @@ void setup(void) {
   light.direction.y = 0;
   light.direction.x = 0;
   vec3_normalize(&light.direction);
-  // load_cube_mesh_data();
-  load_mesh_from_file("./assets/f22.obj");
+  mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
+  load_cube_mesh_data();
+  // load_mesh_from_file("./assets/f22.obj");
   // load_mesh_from_file("./assets/cube.obj");
 }
 
@@ -235,7 +253,10 @@ void render(void) {
     triangle_t triangle = triangles_to_render[i];
     if (renderOption == WIREFRAME_FILL || renderOption == FILL_ONLY)
       draw_filled_triangle(triangle);
-    if (renderOption != FILL_ONLY)
+    if (renderOption == TEXTURED_ONLY || renderOption == WIREFRAME_TEXTURED) {
+      draw_textured_triangle(triangle, mesh_texture);
+    }
+    if (renderOption != FILL_ONLY && renderOption != TEXTURED_ONLY)
       draw_triangle(triangle.points[0].x, triangle.points[0].y,
                     triangle.points[1].x, triangle.points[1].y,
                     triangle.points[2].x, triangle.points[2].y, 0x696969);

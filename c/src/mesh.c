@@ -9,29 +9,46 @@
 mesh_t mesh = {NULL, NULL, NULL, {0, 0, 0}, {1.0, 1.0, 1.0}, {0, 0, 0}};
 
 vec3_t cube_vertices[N_CUBE_VERTICES] = {
-    {-1, -1, -1}, {-1, 1, -1}, {1, 1, -1}, {1, -1, -1},
-    {1, 1, 1},    {1, -1, 1},  {-1, 1, 1}, {-1, -1, 1},
+    {-1, -1, 1}, {1, -1, 1}, {-1, 1, 1},   {1, 1, 1},
+    {-1, 1, -1}, {1, 1, -1}, {-1, -1, -1}, {1, -1, -1},
 };
 
 face_t cube_faces[N_CUBE_FACES] = {
     // front
-    {1, 2, 3, 0xFFFF0000},
-    {1, 3, 4, 0xFFFF0000},
+    {1, 2, 3, 0xFFFF0000, .normals = {1, 1, 1}, .a_uv = {0, 0}, .b_uv = {0, 1},
+     .c_uv = {1, 1}},
+    {3, 2, 4, 0xFFFF0000, .normals = {1, 1, 1}, .a_uv = {0, 0}, .b_uv = {1, 1},
+     .c_uv = {1, 0}},
     // right
-    {4, 3, 5, 0xFF00FF00},
-    {4, 5, 6, 0xFF00FF00},
+    {3, 4, 5, 0xFF00FF00, .normals = {2, 2, 2}, .a_uv = {0, 0}, .b_uv = {0, 1},
+     .c_uv = {1, 1}},
+    {5, 4, 6, 0xFF00FF00, .normals = {2, 2, 2}, .a_uv = {0, 0}, .b_uv = {1, 1},
+     .c_uv = {1, 0}},
     // back
-    {6, 5, 7, 0xFF0000FF},
-    {6, 7, 8, 0xFF0000FF},
+    {5, 6, 7, 0xFF0000FF, .normals = {3, 3, 3}, .a_uv = {0, 0}, .b_uv = {0, 1},
+     .c_uv = {1, 1}},
+    {7, 6, 8, 0xFF0000FF, .normals = {3, 3, 3}, .a_uv = {0, 0}, .b_uv = {1, 1},
+     .c_uv = {1, 0}},
     // left
-    {8, 7, 2, 0xFFFFFF00},
-    {8, 2, 1, 0xFFFFFF00},
+    {7, 8, 1, 0xFFFFFF00, .normals = {4, 4, 4}, .a_uv = {0, 0}, .b_uv = {0, 1},
+     .c_uv = {1, 1}},
+    {1, 8, 2, 0xFFFFFF00, .normals = {4, 4, 4}, .a_uv = {0, 0}, .b_uv = {1, 1},
+     .c_uv = {1, 0}},
     // top
-    {2, 7, 5, 0xFFFF00FF},
-    {2, 5, 3, 0xFFFF00FF},
+    {2, 8, 4, 0xFFFF00FF, .normals = {5, 5, 5}, .a_uv = {0, 0}, .b_uv = {0, 1},
+     .c_uv = {1, 1}},
+    {4, 8, 6, 0xFFFF00FF, .normals = {5, 5, 5}, .a_uv = {0, 0}, .b_uv = {1, 1},
+     .c_uv = {1, 0}},
     // bottom
-    {6, 8, 1, 0xFF00FFFF},
-    {6, 1, 4, 0xFF00FFFF}};
+    {7, 1, 5, 0xFF00FFFF, .normals = {6, 6, 6}, .a_uv = {0, 0}, .b_uv = {0, 1},
+     .c_uv = {1, 1}},
+    {5, 1, 3, 0xFF00FFFF, .normals = {6, 6, 6}, .a_uv = {0, 0}, .b_uv = {1, 1},
+     .c_uv = {1, 0}}};
+
+vec3_t cube_normals[6] = {
+    {0.000000, 0.000000, 1.000000},  {0.000000, 1.000000, 0.000000},
+    {0.000000, 0.000000, -1.000000}, {0.000000, -1.000000, 0.000000},
+    {1.000000, 0.000000, 0.000000},  {-1.000000, 0.000000, 0.000000}};
 
 void load_cube_mesh_data(void) {
   for (int i = 0; i < N_CUBE_VERTICES; i++) {
@@ -41,6 +58,10 @@ void load_cube_mesh_data(void) {
   for (int i = 0; i < N_CUBE_FACES; i++) {
     face_t cube_face = cube_faces[i];
     array_push(mesh.faces, cube_face);
+  }
+  for (int i = 0; i < 6; i++) {
+    vec3_t cube_normal = cube_normals[i];
+    array_push(mesh.vertice_normals, cube_normal);
   }
 }
 
@@ -86,7 +107,7 @@ void load_mesh_from_file(char *filename) {
              &texture_indices[1], &normal_indices[1], &vertex_indices[2],
              &texture_indices[2], &normal_indices[2]);
       face_t face = {
-          vertex_indices[0], vertex_indices[1], vertex_indices[2], 0xFFFFFFFF,
+          vertex_indices[0], vertex_indices[1], vertex_indices[2], 0xFFFF0000,
           .normals = {normal_indices[0], normal_indices[1], normal_indices[2]}};
       array_push(mesh.faces, face);
     }
