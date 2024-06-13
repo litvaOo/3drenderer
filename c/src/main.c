@@ -37,7 +37,7 @@ enum renderOption {
   WIREFRAME_FILL,
   TEXTURED_ONLY,
   WIREFRAME_TEXTURED
-} renderOption = WIREFRAME_FILL;
+} renderOption = WIREFRAME_TEXTURED;
 int backface_culling = 1;
 
 void process_input(void) {
@@ -125,9 +125,9 @@ void update(void) {
   // mesh.rotation.y = 100.0;
   // mesh.rotation.x = 100.0;
   // mesh.rotation.z = 100.0;
-  // mesh.rotation.y += 0.01;
-  mesh.rotation.x += 0.01;
-  // mesh.rotation.z += 0.01;
+  mesh.rotation.y += 0.02;
+  mesh.rotation.x += 0.02;
+  mesh.rotation.z += 0.02;
   //
   // mesh.scale.x += 0.002;
   // mesh.scale.y += 0.001;
@@ -190,10 +190,10 @@ void update(void) {
       projected_points[j] = mat4_mul_vec4_project(
           projection_matrix, vec4_from_vec3(face_vertices[j]));
 
+      projected_points[j].y *= -1;
+
       projected_points[j].x *= (window_width / 2.0);
       projected_points[j].y *= (window_height / 2.0);
-
-      projected_points[j].y *= -1;
 
       projected_points[j].x += (window_width / 2.0);
       projected_points[j].y += (window_height / 2.0);

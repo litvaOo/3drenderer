@@ -15,35 +15,35 @@ vec3_t cube_vertices[N_CUBE_VERTICES] = {
 
 face_t cube_faces[N_CUBE_FACES] = {
     // front
-    {1, 2, 3, 0xFFFF0000, .normals = {1, 1, 1}, .a_uv = {0, 0}, .b_uv = {0, 1},
+    {1, 2, 3, 0xFFFF0000, .normals = {1, 1, 1}, .a_uv = {1, 0}, .b_uv = {0, 0},
      .c_uv = {1, 1}},
-    {3, 2, 4, 0xFFFF0000, .normals = {1, 1, 1}, .a_uv = {0, 0}, .b_uv = {1, 1},
-     .c_uv = {1, 0}},
+    {3, 2, 4, 0xFFFF0000, .normals = {1, 1, 1}, .a_uv = {1, 1}, .b_uv = {0, 0},
+     .c_uv = {0, 1}},
     // right
-    {3, 4, 5, 0xFF00FF00, .normals = {2, 2, 2}, .a_uv = {0, 0}, .b_uv = {0, 1},
+    {3, 4, 5, 0xFF00FF00, .normals = {2, 2, 2}, .a_uv = {1, 0}, .b_uv = {0, 0},
      .c_uv = {1, 1}},
-    {5, 4, 6, 0xFF00FF00, .normals = {2, 2, 2}, .a_uv = {0, 0}, .b_uv = {1, 1},
-     .c_uv = {1, 0}},
+    {5, 4, 6, 0xFF00FF00, .normals = {2, 2, 2}, .a_uv = {1, 1}, .b_uv = {0, 0},
+     .c_uv = {0, 1}},
     // back
-    {5, 6, 7, 0xFF0000FF, .normals = {3, 3, 3}, .a_uv = {0, 0}, .b_uv = {0, 1},
-     .c_uv = {1, 1}},
+    {5, 6, 7, 0xFF0000FF, .normals = {3, 3, 3}, .a_uv = {0, 1}, .b_uv = {1, 1},
+     .c_uv = {0, 0}},
     {7, 6, 8, 0xFF0000FF, .normals = {3, 3, 3}, .a_uv = {0, 0}, .b_uv = {1, 1},
      .c_uv = {1, 0}},
     // left
-    {7, 8, 1, 0xFFFFFF00, .normals = {4, 4, 4}, .a_uv = {0, 0}, .b_uv = {0, 1},
+    {7, 8, 1, 0xFFFFFF00, .normals = {4, 4, 4}, .a_uv = {1, 0}, .b_uv = {0, 0},
      .c_uv = {1, 1}},
-    {1, 8, 2, 0xFFFFFF00, .normals = {4, 4, 4}, .a_uv = {0, 0}, .b_uv = {1, 1},
-     .c_uv = {1, 0}},
+    {1, 8, 2, 0xFFFFFF00, .normals = {4, 4, 4}, .a_uv = {1, 1}, .b_uv = {0, 0},
+     .c_uv = {0, 1}},
     // top
-    {2, 8, 4, 0xFFFF00FF, .normals = {5, 5, 5}, .a_uv = {0, 0}, .b_uv = {0, 1},
+    {2, 8, 4, 0xFFFF00FF, .normals = {5, 5, 5}, .a_uv = {1, 0}, .b_uv = {0, 0},
      .c_uv = {1, 1}},
-    {4, 8, 6, 0xFFFF00FF, .normals = {5, 5, 5}, .a_uv = {0, 0}, .b_uv = {1, 1},
-     .c_uv = {1, 0}},
+    {4, 8, 6, 0xFFFF00FF, .normals = {5, 5, 5}, .a_uv = {1, 1}, .b_uv = {0, 0},
+     .c_uv = {0, 1}},
     // bottom
-    {7, 1, 5, 0xFF00FFFF, .normals = {6, 6, 6}, .a_uv = {0, 0}, .b_uv = {0, 1},
+    {7, 1, 5, 0xFF00FFFF, .normals = {6, 6, 6}, .a_uv = {1, 0}, .b_uv = {0, 0},
      .c_uv = {1, 1}},
-    {5, 1, 3, 0xFF00FFFF, .normals = {6, 6, 6}, .a_uv = {0, 0}, .b_uv = {1, 1},
-     .c_uv = {1, 0}}};
+    {5, 1, 3, 0xFF00FFFF, .normals = {6, 6, 6}, .a_uv = {1, 1}, .b_uv = {0, 0},
+     .c_uv = {0, 1}}};
 
 vec3_t cube_normals[6] = {
     {0.000000, 0.000000, 1.000000},  {0.000000, 1.000000, 0.000000},

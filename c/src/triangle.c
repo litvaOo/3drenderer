@@ -36,6 +36,25 @@ float two_points_distance(vec2_t a, vec2_t b) {
   return sqrtf((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
+uint32_t get_texel(int x, int y, uint32_t *texture, triangle_t triangle) {
+  vec3_t weights = barycentric_weights(triangle.points[0], triangle.points[1],
+                                       triangle.points[2], (vec2_t){x, y});
+  float interpolated_u = triangle.texcoords[0].u * weights.x +
+                         triangle.texcoords[1].u * weights.y +
+                         triangle.texcoords[2].u * weights.z;
+  float interpolated_v = triangle.texcoords[0].v * weights.x +
+                         triangle.texcoords[1].v * weights.y +
+                         triangle.texcoords[2].v * weights.z;
+
+  int tex_x = abs((int)(interpolated_u * (texture_width - 1)));
+  int tex_y = abs((int)(interpolated_v * (texture_height - 1)));
+  return texture[((texture_width * tex_y) + tex_x) %
+                 (texture_height * texture_width)];
+  // draw_pixel(x, y,
+  //            texture[(texture_width * tex_y + tex_x) %
+  //                    (texture_width * texture_height)]);
+}
+
 void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
   if (triangle.points[0].y > triangle.points[1].y) {
     vec2_swap(&triangle.points[0], &triangle.points[1]);
@@ -90,12 +109,11 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
                      (vec2_t){triangle.points[2].x, triangle.points[2].y});
 
       float i2 = lerp(triangle.intensities[0], triangle.intensities[2], t2);
-      uint32_t color = 0xFFFF00FF;
       for (int x = x_start; x < x_end; x++) {
         float t = (float)(x - x_start) / delta;
         float i3 = lerp(i1, i2, t);
         uint32_t new_color =
-            light_apply_intensity((x % 8 && y % 8) ? color : 0xFF0000FF, i3);
+            light_apply_intensity(get_texel(x, y, texture, triangle), i3);
         draw_pixel(x, y, new_color);
       }
     }
@@ -137,12 +155,11 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
                      (vec2_t){triangle.points[2].x, triangle.points[2].y});
 
       float i2 = lerp(triangle.intensities[0], triangle.intensities[2], t2);
-      uint32_t color = 0xFFFF00FF;
       for (int x = x_start; x < x_end; x++) {
         float t = (float)(x - x_start) / delta;
         float i3 = lerp(i1, i2, t);
         uint32_t new_color =
-            light_apply_intensity((x % 8 && y % 8) ? color : 0xFF0000FF, i3);
+            light_apply_intensity(get_texel(x, y, texture, triangle), i3);
         draw_pixel(x, y, new_color);
       }
     }
