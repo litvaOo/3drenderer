@@ -13,6 +13,12 @@ void vec2_swap(vec2_t *a, vec2_t *b) {
   *b = tmp;
 }
 
+void vec4_swap(vec4_t *a, vec4_t *b) {
+  vec4_t tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
+
 void float_swap(float *a, float *b) {
   float tmp = *a;
   *a = *b;
@@ -32,42 +38,55 @@ void tex2_swap(tex2_t *a, tex2_t *b) {
 
 float lerp(float v0, float v1, float t) { return (1 - t) * v0 + t * v1; }
 
-float two_points_distance(vec2_t a, vec2_t b) {
+float two_points_distance(vec4_t a, vec4_t b) {
   return sqrtf((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
 uint32_t get_texel(int x, int y, uint32_t *texture, triangle_t triangle) {
-  vec3_t weights = barycentric_weights(triangle.points[0], triangle.points[1],
-                                       triangle.points[2], (vec2_t){x, y});
-  float interpolated_u = triangle.texcoords[0].u * weights.x +
-                         triangle.texcoords[1].u * weights.y +
-                         triangle.texcoords[2].u * weights.z;
-  float interpolated_v = triangle.texcoords[0].v * weights.x +
-                         triangle.texcoords[1].v * weights.y +
-                         triangle.texcoords[2].v * weights.z;
+  vec3_t weights = barycentric_weights(
+      (vec2_t){triangle.points[0].x, triangle.points[0].y},
+      (vec2_t){triangle.points[1].x, triangle.points[1].y},
+      (vec2_t){triangle.points[2].x, triangle.points[2].y}, (vec2_t){x, y});
+
+  float interpolated_u;
+  float interpolated_v;
+  float interpolated_reciprocal_w;
+
+  interpolated_u =
+      (triangle.texcoords[0].u / triangle.points[0].w) * weights.x +
+      (triangle.texcoords[1].u / triangle.points[1].w) * weights.y +
+      (triangle.texcoords[2].u / triangle.points[2].w) * weights.z;
+  interpolated_v =
+      (triangle.texcoords[0].v / triangle.points[0].w) * weights.x +
+      (triangle.texcoords[1].v / triangle.points[1].w) * weights.y +
+      (triangle.texcoords[2].v / triangle.points[2].w) * weights.z;
+
+  interpolated_reciprocal_w = (1 / triangle.points[0].w) * weights.x +
+                              (1 / triangle.points[1].w) * weights.y +
+                              (1 / triangle.points[2].w) * weights.z;
+
+  interpolated_u /= interpolated_reciprocal_w;
+  interpolated_v /= interpolated_reciprocal_w;
 
   int tex_x = abs((int)(interpolated_u * (texture_width - 1)));
   int tex_y = abs((int)(interpolated_v * (texture_height - 1)));
   return texture[((texture_width * tex_y) + tex_x) %
                  (texture_height * texture_width)];
-  // draw_pixel(x, y,
-  //            texture[(texture_width * tex_y + tex_x) %
-  //                    (texture_width * texture_height)]);
 }
 
 void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
   if (triangle.points[0].y > triangle.points[1].y) {
-    vec2_swap(&triangle.points[0], &triangle.points[1]);
+    vec4_swap(&triangle.points[0], &triangle.points[1]);
     float_swap(&triangle.intensities[0], &triangle.intensities[1]);
     tex2_swap(&triangle.texcoords[0], &triangle.texcoords[1]);
   }
   if (triangle.points[1].y > triangle.points[2].y) {
-    vec2_swap(&triangle.points[1], &triangle.points[2]);
+    vec4_swap(&triangle.points[1], &triangle.points[2]);
     float_swap(&triangle.intensities[2], &triangle.intensities[1]);
     tex2_swap(&triangle.texcoords[1], &triangle.texcoords[2]);
   }
   if (triangle.points[0].y > triangle.points[1].y) {
-    vec2_swap(&triangle.points[0], &triangle.points[1]);
+    vec4_swap(&triangle.points[0], &triangle.points[1]);
     float_swap(&triangle.intensities[0], &triangle.intensities[1]);
     tex2_swap(&triangle.texcoords[0], &triangle.texcoords[1]);
   }
@@ -93,20 +112,12 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
         int_swap(&x_start, &x_end);
       }
       int delta = x_end - x_start;
-      float t1 = two_points_distance(
-                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
-                     (vec2_t){x_start, y}) /
-                 two_points_distance(
-                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
-                     (vec2_t){triangle.points[1].x, triangle.points[1].y});
+      float t1 = two_points_distance(triangle.points[0], (vec4_t){x_start, y}) /
+                 two_points_distance(triangle.points[0], triangle.points[1]);
 
       float i1 = lerp(triangle.intensities[0], triangle.intensities[1], t1);
-      float t2 = two_points_distance(
-                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
-                     (vec2_t){x_end, y}) /
-                 two_points_distance(
-                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
-                     (vec2_t){triangle.points[2].x, triangle.points[2].y});
+      float t2 = two_points_distance(triangle.points[0], (vec4_t){x_end, y}) /
+                 two_points_distance(triangle.points[0], triangle.points[2]);
 
       float i2 = lerp(triangle.intensities[0], triangle.intensities[2], t2);
       for (int x = x_start; x < x_end; x++) {
@@ -139,20 +150,12 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
         int_swap(&x_start, &x_end);
       }
       int delta = x_end - x_start;
-      float t1 = two_points_distance(
-                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
-                     (vec2_t){x_start, y}) /
-                 two_points_distance(
-                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
-                     (vec2_t){triangle.points[1].x, triangle.points[1].y});
+      float t1 = two_points_distance(triangle.points[0], (vec4_t){x_start, y}) /
+                 two_points_distance(triangle.points[0], triangle.points[1]);
 
       float i1 = lerp(triangle.intensities[0], triangle.intensities[1], t1);
-      float t2 = two_points_distance(
-                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
-                     (vec2_t){x_end, y}) /
-                 two_points_distance(
-                     (vec2_t){triangle.points[0].x, triangle.points[0].y},
-                     (vec2_t){triangle.points[2].x, triangle.points[2].y});
+      float t2 = two_points_distance(triangle.points[0], (vec4_t){x_end, y}) /
+                 two_points_distance(triangle.points[0], triangle.points[2]);
 
       float i2 = lerp(triangle.intensities[0], triangle.intensities[2], t2);
       for (int x = x_start; x < x_end; x++) {
@@ -167,15 +170,15 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
 
 void draw_filled_triangle(triangle_t triangle) {
   if (triangle.points[0].y > triangle.points[1].y) {
-    vec2_swap(&triangle.points[0], &triangle.points[1]);
+    vec4_swap(&triangle.points[0], &triangle.points[1]);
     float_swap(&triangle.intensities[0], &triangle.intensities[1]);
   }
   if (triangle.points[1].y > triangle.points[2].y) {
-    vec2_swap(&triangle.points[1], &triangle.points[2]);
+    vec4_swap(&triangle.points[1], &triangle.points[2]);
     float_swap(&triangle.intensities[2], &triangle.intensities[1]);
   }
   if (triangle.points[0].y > triangle.points[1].y) {
-    vec2_swap(&triangle.points[0], &triangle.points[1]);
+    vec4_swap(&triangle.points[0], &triangle.points[1]);
     float_swap(&triangle.intensities[0], &triangle.intensities[1]);
   }
 
@@ -200,7 +203,7 @@ void draw_filled_triangle(triangle_t triangle) {
               (triangle.points[2].y - triangle.points[0].y)) +
              triangle.points[0].x;
 
-    float t = two_points_distance(triangle.points[0], (vec2_t){Mx, My}) /
+    float t = two_points_distance(triangle.points[0], (vec4_t){Mx, My}) /
               two_points_distance(triangle.points[0], triangle.points[2]);
 
     float Mi = lerp(triangle.intensities[0], triangle.intensities[2], t);
@@ -228,12 +231,12 @@ void fill_flat_bottom_triangle(int x0, int y0, int x1, int y1, int x2, int y2,
   for (int y = y0; y <= y2; y++) {
     int delta = x_end - x_start;
     int change = delta / abs(delta);
-    float t1 = two_points_distance((vec2_t){x0, y0}, (vec2_t){x_start, y}) /
-               two_points_distance((vec2_t){x0, y0}, (vec2_t){x1, y1});
+    float t1 = two_points_distance((vec4_t){x0, y0}, (vec4_t){x_start, y}) /
+               two_points_distance((vec4_t){x0, y0}, (vec4_t){x1, y1});
 
     float i1 = lerp(intensities[0], intensities[1], t1);
-    float t2 = two_points_distance((vec2_t){x0, y0}, (vec2_t){x_end, y}) /
-               two_points_distance((vec2_t){x0, y0}, (vec2_t){x2, y2});
+    float t2 = two_points_distance((vec4_t){x0, y0}, (vec4_t){x_end, y}) /
+               two_points_distance((vec4_t){x0, y0}, (vec4_t){x2, y2});
 
     float i2 = lerp(intensities[0], intensities[2], t2);
     for (int i = 0; i <= abs(delta) + 1; i++) {
@@ -256,12 +259,12 @@ void fill_flat_top_triangle(int x0, int y0, int x1, int y1, int x2, int y2,
   float x_end = x2;
 
   for (int y = y2; y >= y0; y--) {
-    float t1 = two_points_distance((vec2_t){x0, y0}, (vec2_t){x_start, y}) /
-               two_points_distance((vec2_t){x0, y0}, (vec2_t){x2, y2});
+    float t1 = two_points_distance((vec4_t){x0, y0}, (vec4_t){x_start, y}) /
+               two_points_distance((vec4_t){x0, y0}, (vec4_t){x2, y2});
 
     float i1 = lerp(intensities[0], intensities[2], t1);
-    float t2 = two_points_distance((vec2_t){x1, y1}, (vec2_t){x_end, y}) /
-               two_points_distance((vec2_t){x1, y1}, (vec2_t){x2, y2});
+    float t2 = two_points_distance((vec4_t){x1, y1}, (vec4_t){x_end, y}) /
+               two_points_distance((vec4_t){x1, y1}, (vec4_t){x2, y2});
 
     float i2 = lerp(intensities[1], intensities[2], t2);
     int delta = x_end - x_start;

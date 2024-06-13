@@ -202,16 +202,16 @@ void update(void) {
     triangle_t projected_triangle = {
         .points =
             {
-                {projected_points[0].x, projected_points[0].y},
-                {projected_points[1].x, projected_points[1].y},
-                {projected_points[2].x, projected_points[2].y},
+                projected_points[0],
+                projected_points[1],
+                projected_points[2],
             },
 
         .texcoords =
             {
-                {mesh_face.a_uv.u, mesh_face.a_uv.v},
-                {mesh_face.b_uv.u, mesh_face.b_uv.v},
-                {mesh_face.c_uv.u, mesh_face.c_uv.v},
+                mesh_face.a_uv,
+                mesh_face.b_uv,
+                mesh_face.c_uv,
             },
         .color = mesh_face.color,
         .intensities = {vec3_dot(normals[0], light.direction),
