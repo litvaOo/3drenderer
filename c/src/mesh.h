@@ -1,6 +1,7 @@
 #ifndef MESH_H
 #define MESH_H
 
+#include "texture.h"
 #include "triangle.h"
 #include "vector.h"
 #define N_CUBE_VERTICES 8
@@ -13,6 +14,7 @@ typedef struct {
   vec3_t *vertices;
   face_t *faces;
   vec3_t *vertice_normals;
+  tex2_t *texcoords;
   vec3_t rotation;
   vec3_t scale;
   vec3_t translation;

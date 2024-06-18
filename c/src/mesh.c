@@ -1,12 +1,13 @@
 #include "mesh.h"
 #include "array.h"
+#include "texture.h"
 #include "triangle.h"
 #include "vector.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-mesh_t mesh = {NULL, NULL, NULL, {0, 0, 0}, {1.0, 1.0, 1.0}, {0, 0, 0}};
+mesh_t mesh = {NULL, NULL, NULL, NULL, {0, 0, 0}, {1.0, 1.0, 1.0}, {0, 0, 0}};
 
 vec3_t cube_vertices[N_CUBE_VERTICES] = {
     {-1, -1, 1}, {1, -1, 1}, {-1, 1, 1},   {1, 1, 1},
@@ -97,6 +98,11 @@ void load_mesh_from_file(char *filename) {
         sscanf(&line[2], "%f %f %f", &normal.x, &normal.y, &normal.z);
         array_push(mesh.vertice_normals, normal);
       }
+      if (line[1] == 't') {
+        tex2_t texcoord;
+        sscanf(&line[2], "%f %f", &texcoord.u, &texcoord.v);
+        array_push(mesh.texcoords, texcoord);
+      }
     }
     if (line[0] == 'f') {
       int vertex_indices[3];
@@ -107,7 +113,13 @@ void load_mesh_from_file(char *filename) {
              &texture_indices[1], &normal_indices[1], &vertex_indices[2],
              &texture_indices[2], &normal_indices[2]);
       face_t face = {
-          vertex_indices[0], vertex_indices[1], vertex_indices[2], 0xFFFF0000,
+          vertex_indices[0],
+          vertex_indices[1],
+          vertex_indices[2],
+          0xFFFF0000,
+          .a_uv = mesh.texcoords[texture_indices[0] - 1],
+          .b_uv = mesh.texcoords[texture_indices[1] - 1],
+          .c_uv = mesh.texcoords[texture_indices[2] - 1],
           .normals = {normal_indices[0], normal_indices[1], normal_indices[2]}};
       array_push(mesh.faces, face);
     }

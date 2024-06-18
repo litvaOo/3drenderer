@@ -1,4 +1,6 @@
 #include "display.h"
+#include "texture.h"
+#include "upng.h"
 #include <math.h>
 #include <stdint.h>
 
@@ -95,6 +97,7 @@ void draw_rectangle(int x, int y, int width, int height, uint32_t color) {
 
 void destroy_window(void) {
   free(color_buffer);
+  upng_free(png_texture);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();

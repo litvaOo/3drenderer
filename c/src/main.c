@@ -242,9 +242,9 @@ void setup(void) {
   // mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
 
   load_png_texture_data("./assets/cube.png");
-  load_cube_mesh_data();
+  // load_cube_mesh_data();
   // load_mesh_from_file("./assets/f22.obj");
-  // load_mesh_from_file("./assets/cube.obj");
+  load_mesh_from_file("./assets/cube.obj");
 }
 
 void render(void) {
