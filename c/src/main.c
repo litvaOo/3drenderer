@@ -208,12 +208,9 @@ void update(void) {
                 projected_points[2],
             },
 
-        .texcoords =
-            {
-                mesh_face.a_uv,
-                mesh_face.b_uv,
-                mesh_face.c_uv,
-            },
+        .texcoords = {mesh.texcoords[mesh_face.texcoords[0] - 1],
+                      mesh.texcoords[mesh_face.texcoords[1] - 1],
+                      mesh.texcoords[mesh_face.texcoords[2] - 1]},
         .color = mesh_face.color,
         .intensities = {vec3_dot(normals[0], light.direction),
                         vec3_dot(normals[1], light.direction),

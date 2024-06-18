@@ -11,9 +11,10 @@ typedef struct {
   int c;
   uint32_t color;
   int normals[3];
-  tex2_t a_uv;
-  tex2_t b_uv;
-  tex2_t c_uv;
+  int texcoords[3];
+  // tex2_t a_uv;
+  // tex2_t b_uv;
+  // tex2_t c_uv;
 } face_t;
 
 typedef struct {
