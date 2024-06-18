@@ -5,6 +5,7 @@
 #include "mesh.h"
 #include "texture.h"
 #include "triangle.h"
+#include "upng.h"
 #include "vector.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
@@ -228,7 +229,7 @@ void update(void) {
 void setup(void) {
   color_buffer =
       (uint32_t *)calloc(window_width * window_height, sizeof(uint32_t));
-  color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+  color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
                                            SDL_TEXTUREACCESS_STREAMING,
                                            window_width, window_height);
   float fov = M_PI / 3.0;
@@ -238,7 +239,9 @@ void setup(void) {
   light.direction.y = 0;
   light.direction.x = 0;
   vec3_normalize(&light.direction);
-  mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
+  // mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
+
+  load_png_texture_data("./assets/cube.png");
   load_cube_mesh_data();
   // load_mesh_from_file("./assets/f22.obj");
   // load_mesh_from_file("./assets/cube.obj");
