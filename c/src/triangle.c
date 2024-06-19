@@ -42,7 +42,7 @@ float two_points_distance(vec4_t a, vec4_t b) {
   return sqrtf((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-uint32_t get_texel(int x, int y, uint32_t *texture, triangle_t triangle) {
+uint32_t get_texel(float x, float y, uint32_t *texture, triangle_t triangle) {
   vec3_t weights = barycentric_weights(
       (vec2_t){triangle.points[0].x, triangle.points[0].y},
       (vec2_t){triangle.points[1].x, triangle.points[1].y},
@@ -68,8 +68,8 @@ uint32_t get_texel(int x, int y, uint32_t *texture, triangle_t triangle) {
   interpolated_u /= interpolated_reciprocal_w;
   interpolated_v /= interpolated_reciprocal_w;
 
-  int tex_x = abs((int)(interpolated_u * (texture_width - 1)));
-  int tex_y = abs((int)(interpolated_v * (texture_height - 1)));
+  int tex_x = abs((int)(interpolated_u * (texture_width)));
+  int tex_y = abs((int)(interpolated_v * (texture_height)));
   return texture[((texture_width * tex_y) + tex_x) %
                  (texture_height * texture_width)];
 }
@@ -91,6 +91,9 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
     tex2_swap(&triangle.texcoords[0], &triangle.texcoords[1]);
   }
 
+  triangle.texcoords[0].v = 1 - triangle.texcoords[0].v;
+  triangle.texcoords[1].v = 1 - triangle.texcoords[1].v;
+  triangle.texcoords[2].v = 1 - triangle.texcoords[2].v;
   // flat bottom triangle
   float inv_slope1 = 0;
   float inv_slope2 = 0;
@@ -103,7 +106,7 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
                  fabs(triangle.points[2].y - triangle.points[0].y);
 
   if (triangle.points[1].y != triangle.points[0].y)
-    for (int y = triangle.points[0].y; y <= triangle.points[1].y; y++) {
+    for (float y = triangle.points[0].y; y <= triangle.points[1].y; y++) {
       int x_start =
           triangle.points[1].x + (y - triangle.points[1].y) * inv_slope1;
       int x_end =
@@ -120,7 +123,7 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
                  two_points_distance(triangle.points[0], triangle.points[2]);
 
       float i2 = lerp(triangle.intensities[0], triangle.intensities[2], t2);
-      for (int x = x_start; x < x_end; x++) {
+      for (float x = x_start; x < x_end; x++) {
         float t = (float)(x - x_start) / delta;
         float i3 = lerp(i1, i2, t);
         uint32_t new_color =
@@ -141,7 +144,7 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
                  fabs(triangle.points[2].y - triangle.points[0].y);
 
   if (triangle.points[2].y != triangle.points[1].y)
-    for (int y = triangle.points[1].y; y <= triangle.points[2].y; y++) {
+    for (float y = triangle.points[1].y; y <= triangle.points[2].y; y++) {
       int x_start =
           triangle.points[1].x + (y - triangle.points[1].y) * inv_slope1;
       int x_end =
@@ -158,7 +161,7 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
                  two_points_distance(triangle.points[0], triangle.points[2]);
 
       float i2 = lerp(triangle.intensities[0], triangle.intensities[2], t2);
-      for (int x = x_start; x < x_end; x++) {
+      for (float x = x_start; x < x_end; x++) {
         float t = (float)(x - x_start) / delta;
         float i3 = lerp(i1, i2, t);
         uint32_t new_color =

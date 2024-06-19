@@ -5,7 +5,6 @@
 #include "mesh.h"
 #include "texture.h"
 #include "triangle.h"
-#include "upng.h"
 #include "vector.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
@@ -94,9 +93,9 @@ int partition(triangle_t *triangles, int low, int high) {
   int i = low;
   int j = high;
   while (1) {
-    while (triangles[i].avg_depth < pivot.avg_depth)
+    while (triangles[i].avg_depth > pivot.avg_depth)
       i++;
-    while (triangles[j].avg_depth > pivot.avg_depth)
+    while (triangles[j].avg_depth < pivot.avg_depth)
       j--;
     if (i >= j)
       return j;
@@ -128,13 +127,13 @@ void update(void) {
   // mesh.rotation.z = 100.0;
   mesh.rotation.y += 0.02;
   mesh.rotation.x += 0.02;
-  mesh.rotation.z += 0.02;
+  // mesh.rotation.z += 0.02;
   //
   // mesh.scale.x += 0.002;
   // mesh.scale.y += 0.001;
   //
   // mesh.translation.x += 0.01;
-  mesh.translation.z = -5;
+  mesh.translation.z = 5;
 
   mat4_t scale_matrix =
       mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
@@ -223,7 +222,7 @@ void update(void) {
   sort_triangles(triangles_to_render, 0, array_length(triangles_to_render) - 1);
 }
 
-void setup(void) {
+void setup(char *obj_file, char *png_file) {
   color_buffer =
       (uint32_t *)calloc(window_width * window_height, sizeof(uint32_t));
   color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
@@ -232,16 +231,16 @@ void setup(void) {
   float fov = M_PI / 3.0;
   projection_matrix = mat4_make_perspective(
       fov, (float)window_height / (float)window_width, 0.1, 100.0);
-  light.direction.z = 1;
+  light.direction.z = -1;
   light.direction.y = 0;
   light.direction.x = 0;
   vec3_normalize(&light.direction);
   // mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
 
-  load_png_texture_data("./assets/cube.png");
+  load_png_texture_data(png_file);
   // load_cube_mesh_data();
   // load_mesh_from_file("./assets/f22.obj");
-  load_mesh_from_file("./assets/cube.obj");
+  load_mesh_from_file(obj_file);
 }
 
 void render(void) {
@@ -283,10 +282,21 @@ void free_resources(void) {
   array_free(mesh.vertices);
 }
 
-int main() {
+int main(int argc, char **argv) {
   is_running = initialize_window();
 
-  setup();
+  char *obj_file;
+  char *png_file;
+
+  if (argc == 1) {
+    obj_file = "./assets/cube.obj";
+    png_file = "./assets/cube.png";
+  } else {
+    obj_file = argv[1];
+    png_file = argv[2];
+  }
+
+  setup(obj_file, png_file);
 
   while (is_running == 0) {
     process_input();
