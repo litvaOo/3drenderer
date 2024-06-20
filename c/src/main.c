@@ -5,6 +5,7 @@
 #include "mesh.h"
 #include "texture.h"
 #include "triangle.h"
+#include "upng.h"
 #include "vector.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
@@ -15,6 +16,7 @@
 #include <SDL2/SDL_video.h>
 #include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -27,7 +29,11 @@ mat4_t projection_matrix;
 
 light_t light = {{0, 0, 1}};
 
-triangle_t *triangles_to_render = NULL;
+#define MAX_TRIANGLES_PER_MESH 10000
+triangle_t triangles_to_render[MAX_TRIANGLES_PER_MESH];
+
+int num_triangles_to_render = 0;
+
 int previous_frame_time = 0;
 
 enum renderOption {
@@ -88,40 +94,12 @@ void process_input(void) {
   }
 }
 
-int partition(triangle_t *triangles, int low, int high) {
-  triangle_t pivot = triangles[(low + high) / 2];
-  int i = low;
-  int j = high;
-  while (1) {
-    while (triangles[i].avg_depth > pivot.avg_depth)
-      i++;
-    while (triangles[j].avg_depth < pivot.avg_depth)
-      j--;
-    if (i >= j)
-      return j;
-    triangle_t tmp = triangles[i];
-    triangles[i] = triangles[j];
-    triangles[j] = tmp;
-    i++;
-    j--;
-  }
-}
-
-void sort_triangles(triangle_t *triangles, int low, int high) {
-  if (low >= 0 && high >= 0 && low < high) {
-    int mid = partition(triangles, low, high);
-    sort_triangles(triangles, low, mid);
-    sort_triangles(triangles, mid + 1, high);
-  }
-}
-
 void update(void) {
   int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
   if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
     SDL_Delay(time_to_wait);
 
-  triangles_to_render = NULL;
-
+  num_triangles_to_render = 0;
   // mesh.rotation.y = 100.0;
   // mesh.rotation.x = 100.0;
   // mesh.rotation.z = 100.0;
@@ -214,12 +192,11 @@ void update(void) {
         .intensities = {vec3_dot(normals[0], light.direction),
                         vec3_dot(normals[1], light.direction),
                         vec3_dot(normals[2], light.direction)},
-        .avg_depth =
-            (face_vertices[0].z + face_vertices[1].z + face_vertices[2].z) /
-            3.0};
-    array_push(triangles_to_render, projected_triangle);
+    };
+    if (num_triangles_to_render < MAX_TRIANGLES_PER_MESH) {
+      triangles_to_render[num_triangles_to_render++] = projected_triangle;
+    }
   }
-  sort_triangles(triangles_to_render, 0, array_length(triangles_to_render) - 1);
 }
 
 void setup(char *obj_file, char *png_file) {
@@ -228,6 +205,7 @@ void setup(char *obj_file, char *png_file) {
   color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
                                            SDL_TEXTUREACCESS_STREAMING,
                                            window_width, window_height);
+  z_buffer = (float *)malloc(sizeof(float) * window_width * window_height);
   float fov = M_PI / 3.0;
   projection_matrix = mat4_make_perspective(
       fov, (float)window_height / (float)window_width, 0.1, 100.0);
@@ -235,23 +213,18 @@ void setup(char *obj_file, char *png_file) {
   light.direction.y = 0;
   light.direction.x = 0;
   vec3_normalize(&light.direction);
-  // mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
 
   load_png_texture_data(png_file);
-  // load_cube_mesh_data();
-  // load_mesh_from_file("./assets/f22.obj");
   load_mesh_from_file(obj_file);
 }
 
 void render(void) {
   draw_grid(50);
 
-  int len = array_length(triangles_to_render);
-
-  for (int i = 0; i < len; i++) {
+  for (int i = 0; i < num_triangles_to_render; i++) {
     triangle_t triangle = triangles_to_render[i];
     if (renderOption == WIREFRAME_FILL || renderOption == FILL_ONLY)
-      draw_filled_triangle(triangle);
+      draw_textured_triangle(triangle, NULL);
     if (renderOption == TEXTURED_ONLY || renderOption == WIREFRAME_TEXTURED) {
       draw_textured_triangle(triangle, mesh_texture);
     }
@@ -269,15 +242,17 @@ void render(void) {
     }
   }
 
-  array_free(triangles_to_render);
   render_color_buffer();
   clear_color_buffer(0xFF000000);
+  clear_z_buffer();
 
   SDL_RenderPresent(renderer);
 }
 
 void free_resources(void) {
   free(color_buffer);
+  free(z_buffer);
+  upng_free(png_texture);
   array_free(mesh.faces);
   array_free(mesh.vertices);
 }
@@ -289,8 +264,8 @@ int main(int argc, char **argv) {
   char *png_file;
 
   if (argc == 1) {
-    obj_file = "./assets/cube.obj";
-    png_file = "./assets/cube.png";
+    obj_file = "./assets/f22.obj";
+    png_file = "./assets/f22.png";
   } else {
     obj_file = argv[1];
     png_file = argv[2];

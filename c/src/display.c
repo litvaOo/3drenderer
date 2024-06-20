@@ -7,6 +7,7 @@
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 uint32_t *color_buffer = NULL;
+float *z_buffer = NULL;
 int window_width;
 int window_height;
 SDL_Texture *color_buffer_texture = NULL;
@@ -53,6 +54,11 @@ void clear_color_buffer(uint32_t color) {
   for (int i = 0; i < window_height * window_width; i++) {
     color_buffer[i] = color;
   }
+}
+
+void clear_z_buffer(void) {
+  for (int i = 0; i < window_width * window_height; i++)
+    z_buffer[i] = 1.0;
 }
 
 void draw_grid(int multiple) {
