@@ -1,4 +1,5 @@
 #include "array.h"
+#include "camera.h"
 #include "display.h"
 #include "lighting.h"
 #include "matrix.h"
@@ -12,6 +13,7 @@
 #include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_scancode.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
 #include <math.h>
@@ -23,8 +25,8 @@
 
 short is_running = -1;
 
-vec3_t camera_position = {0, 0, 0};
-
+camera_t camera = {{0, 0, 0}, {0, 0, 1}, {0, 0, 0}, 0.0};
+float delta_time;
 mat4_t projection_matrix;
 
 light_t light = {{0, 0, 1}};
@@ -59,11 +61,11 @@ void process_input(void) {
       is_running = -1;
       break;
     }
-    if (event.key.keysym.scancode == 6) {
+    if (event.key.keysym.scancode == SDL_SCANCODE_C) {
       backface_culling = 1;
       break;
     }
-    if (event.key.keysym.scancode == 7) {
+    if (event.key.keysym.scancode == SDL_SCANCODE_X) {
       backface_culling = 0;
       break;
     }
@@ -91,6 +93,32 @@ void process_input(void) {
       renderOption = WIREFRAME_TEXTURED;
       break;
     }
+    if (event.key.keysym.scancode == SDL_SCANCODE_W) {
+      camera.forward_velocity = vec3_mult(camera.direction, 0.5 * delta_time);
+      camera.position = vec3_add(camera.position, camera.forward_velocity);
+      break;
+    }
+    if (event.key.keysym.scancode == SDL_SCANCODE_D) {
+      camera.yaw_angle += 0.1;
+      break;
+    }
+    if (event.key.keysym.scancode == SDL_SCANCODE_A) {
+      camera.yaw_angle -= 0.1;
+      break;
+    }
+    if (event.key.keysym.scancode == SDL_SCANCODE_S) {
+      camera.forward_velocity = vec3_mult(camera.direction, 0.5 * delta_time);
+      camera.position = vec3_sub(camera.position, camera.forward_velocity);
+      break;
+    }
+    if (event.key.keysym.scancode == SDL_SCANCODE_UP) {
+      camera.position.y += 0.3;
+      break;
+    }
+    if (event.key.keysym.scancode == SDL_SCANCODE_DOWN) {
+      camera.position.y -= 0.3;
+      break;
+    }
   }
 }
 
@@ -99,19 +127,13 @@ void update(void) {
   if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
     SDL_Delay(time_to_wait);
 
+  delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
+
   num_triangles_to_render = 0;
-  // mesh.rotation.y = 100.0;
-  // mesh.rotation.x = 100.0;
-  // mesh.rotation.z = 100.0;
-  mesh.rotation.y += 0.02;
-  mesh.rotation.x += 0.02;
-  // mesh.rotation.z += 0.02;
-  //
-  // mesh.scale.x += 0.002;
-  // mesh.scale.y += 0.001;
-  //
-  // mesh.translation.x += 0.01;
-  mesh.translation.z = 5;
+  mesh.rotation.y += 0.08;
+  mesh.rotation.z += 0.08;
+  mesh.rotation.x += 0.08;
+  mesh.translation.z = 4;
 
   mat4_t scale_matrix =
       mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
@@ -122,6 +144,16 @@ void update(void) {
   mat4_t rotation_matrix_x = mat4_make_rotation_x(mesh.rotation.x);
   mat4_t rotation_matrix_y = mat4_make_rotation_y(mesh.rotation.y);
   mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh.rotation.z);
+
+  vec3_t target = {0, 0, 1};
+  mat4_t camera_yaw_rotation = mat4_make_rotation_y(camera.yaw_angle);
+  camera.direction = vec3_from_vec4(
+      mat4_mul_vec4(camera_yaw_rotation, vec4_from_vec3(target)));
+
+  target = vec3_add(camera.position, camera.direction);
+  vec3_t up_direction = {0, 1, 0};
+
+  mat4_t view_matrix = look_at(camera.position, target, up_direction);
 
   int num_faces = array_length(mesh.faces);
   for (int i = 0; i < num_faces; i++) {
@@ -143,7 +175,9 @@ void update(void) {
       world_matrix = mat4_mul_mat4(rotation_matrix_y, world_matrix);
       world_matrix = mat4_mul_mat4(rotation_matrix_x, world_matrix);
       world_matrix = mat4_mul_mat4(translation_matrix, world_matrix);
+
       transformed_vertex = mat4_mul_vec4(world_matrix, transformed_vertex);
+      transformed_vertex = mat4_mul_vec4(view_matrix, transformed_vertex);
 
       face_vertices[j] = vec3_from_vec4(transformed_vertex);
       mat4_t rotation_matrix = mat4_identity();
@@ -158,7 +192,8 @@ void update(void) {
                           vec3_sub(face_vertices[2], face_vertices[0]));
 
     vec3_normalize(&N);
-    vec3_t CR = vec3_sub(camera_position, face_vertices[0]);
+    vec3_t origin = {0, 0, 0};
+    vec3_t CR = vec3_sub(origin, face_vertices[0]);
 
     if (backface_culling == 1 && vec3_dot(N, CR) < 0)
       continue;
@@ -280,9 +315,9 @@ int main(int argc, char **argv) {
     update();
     render();
     frames++;
-    if (SDL_GetTicks() - start_time > 10000) {
-      break;
-    }
+    // if (SDL_GetTicks() - start_time > 10000) {
+    //   break;
+    // }
   }
   printf("Frames: %d\n", frames);
   printf("Average FPS: %f\n",

@@ -110,5 +110,7 @@ void destroy_window(void) {
 }
 
 void draw_pixel(int x, int y, uint32_t color) {
-  color_buffer[y * window_width + x] = color;
+  if (y * window_width + x < window_width * window_height &&
+      y * window_width + x >= 0)
+    color_buffer[y * window_width + x] = color;
 }
