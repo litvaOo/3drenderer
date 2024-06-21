@@ -42,8 +42,7 @@ float two_points_distance(vec4_t a, vec4_t b) {
   return sqrtf((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-void draw_texel(int x, int y, uint32_t *texture, triangle_t triangle,
-                float intensity) {
+void draw_texel(int x, int y, uint32_t *texture, triangle_t triangle) {
   vec3_t weights = barycentric_weights(
       (vec2_t){triangle.points[0].x, triangle.points[0].y},
       (vec2_t){triangle.points[1].x, triangle.points[1].y},
@@ -71,7 +70,9 @@ void draw_texel(int x, int y, uint32_t *texture, triangle_t triangle,
 
   int tex_x = abs((int)(interpolated_u * (texture_width)));
   int tex_y = abs((int)(interpolated_v * (texture_height)));
-
+  float intensity = triangle.intensities[0] * weights.x +
+                    triangle.intensities[1] * weights.y +
+                    triangle.intensities[2] * weights.z;
   interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
 
   if (z_buffer[window_width * y + x] >= interpolated_reciprocal_w) {
@@ -124,19 +125,8 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
       if (x_start > x_end) {
         int_swap(&x_start, &x_end);
       }
-      int delta = x_end - x_start;
-      float t1 = two_points_distance(triangle.points[0], (vec4_t){x_start, y}) /
-                 two_points_distance(triangle.points[0], triangle.points[1]);
-
-      float i1 = lerp(triangle.intensities[0], triangle.intensities[1], t1);
-      float t2 = two_points_distance(triangle.points[0], (vec4_t){x_end, y}) /
-                 two_points_distance(triangle.points[0], triangle.points[2]);
-
-      float i2 = lerp(triangle.intensities[0], triangle.intensities[2], t2);
       for (float x = x_start; x <= x_end; x++) {
-        float t = (float)(x - x_start) / delta;
-        float i3 = lerp(i1, i2, t);
-        draw_texel(x, y, texture, triangle, i3);
+        draw_texel(x, y, texture, triangle);
       }
     }
 
@@ -160,19 +150,8 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
       if (x_start > x_end) {
         int_swap(&x_start, &x_end);
       }
-      int delta = x_end - x_start;
-      float t1 = two_points_distance(triangle.points[0], (vec4_t){x_start, y}) /
-                 two_points_distance(triangle.points[0], triangle.points[1]);
-
-      float i1 = lerp(triangle.intensities[0], triangle.intensities[1], t1);
-      float t2 = two_points_distance(triangle.points[0], (vec4_t){x_end, y}) /
-                 two_points_distance(triangle.points[0], triangle.points[2]);
-
-      float i2 = lerp(triangle.intensities[0], triangle.intensities[2], t2);
       for (float x = x_start; x <= x_end; x++) {
-        float t = (float)(x - x_start) / delta;
-        float i3 = lerp(i1, i2, t);
-        draw_texel(x, y, texture, triangle, i3);
+        draw_texel(x, y, texture, triangle);
       }
     }
 };
