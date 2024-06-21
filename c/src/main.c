@@ -273,11 +273,20 @@ int main(int argc, char **argv) {
 
   setup(obj_file, png_file);
 
+  int start_time = SDL_GetTicks();
+  int frames = 0;
   while (is_running == 0) {
     process_input();
     update();
     render();
+    frames++;
+    if (SDL_GetTicks() - start_time > 10000) {
+      break;
+    }
   }
+  printf("Frames: %d\n", frames);
+  printf("Average FPS: %f\n",
+         (float)frames / ((SDL_GetTicks() - start_time) / 1000.0));
   destroy_window();
   return 0;
 }
