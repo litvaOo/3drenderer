@@ -94,29 +94,29 @@ void process_input(void) {
       break;
     }
     if (event.key.keysym.scancode == SDL_SCANCODE_W) {
-      camera.forward_velocity = vec3_mult(camera.direction, 0.5 * delta_time);
+      camera.forward_velocity = vec3_mult(camera.direction, 5.0 * delta_time);
       camera.position = vec3_add(camera.position, camera.forward_velocity);
       break;
     }
     if (event.key.keysym.scancode == SDL_SCANCODE_D) {
-      camera.yaw_angle += 0.1;
+      camera.yaw_angle += 1.0 * delta_time;
       break;
     }
     if (event.key.keysym.scancode == SDL_SCANCODE_A) {
-      camera.yaw_angle -= 0.1;
+      camera.yaw_angle -= 1.0 * delta_time;
       break;
     }
     if (event.key.keysym.scancode == SDL_SCANCODE_S) {
-      camera.forward_velocity = vec3_mult(camera.direction, 0.5 * delta_time);
+      camera.forward_velocity = vec3_mult(camera.direction, 5.0 * delta_time);
       camera.position = vec3_sub(camera.position, camera.forward_velocity);
       break;
     }
     if (event.key.keysym.scancode == SDL_SCANCODE_UP) {
-      camera.position.y += 0.3;
+      camera.position.y += 3.0 * delta_time;
       break;
     }
     if (event.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-      camera.position.y -= 0.3;
+      camera.position.y -= 3.0 * delta_time;
       break;
     }
   }
@@ -129,10 +129,11 @@ void update(void) {
 
   delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
 
+  previous_frame_time = SDL_GetTicks();
   num_triangles_to_render = 0;
-  mesh.rotation.y += 0.08;
-  mesh.rotation.z += 0.08;
-  mesh.rotation.x += 0.08;
+  mesh.rotation.y += 0.08 * delta_time;
+  mesh.rotation.z += 0.08 * delta_time;
+  mesh.rotation.x += 0.08 * delta_time;
   mesh.translation.z = 4;
 
   mat4_t scale_matrix =

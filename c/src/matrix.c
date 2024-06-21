@@ -54,7 +54,7 @@ mat4_t mat4_make_rotation_z(float angle) {
   return m;
 }
 
-mat4_t mat4_make_rotation_y(float angle) {
+mat4_t mat4_make_rotation_x(float angle) {
   mat4_t m = mat4_identity();
   float c = cos(angle);
   float s = sin(angle);
@@ -65,7 +65,7 @@ mat4_t mat4_make_rotation_y(float angle) {
   return m;
 }
 
-mat4_t mat4_make_rotation_x(float angle) {
+mat4_t mat4_make_rotation_y(float angle) {
   mat4_t m = mat4_identity();
   float c = cos(angle);
   float s = sin(angle);
