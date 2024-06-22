@@ -73,10 +73,10 @@ void draw_texel(int x, int y, uint32_t *texture, triangle_t triangle) {
                     triangle.intensities[2] * weights.z;
   interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
 
-  if (window_width * y + x >= 0 &&
-      window_width * y + x < window_width * window_height &&
-      z_buffer[window_width * y + x] >= interpolated_reciprocal_w) {
-    z_buffer[window_width * y + x] = interpolated_reciprocal_w;
+  if (get_window_width() * y + x >= 0 &&
+      get_window_width() * y + x < get_window_width() * get_window_height() &&
+      get_zbuffer_at(x, y) >= interpolated_reciprocal_w) {
+    set_zbuffer_at(x, y, interpolated_reciprocal_w);
     uint32_t color = texture == NULL
                          ? triangle.color
                          : texture[((texture_width * tex_y) + tex_x) %

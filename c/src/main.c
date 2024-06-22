@@ -7,7 +7,6 @@
 #include "mesh.h"
 #include "texture.h"
 #include "triangle.h"
-#include "upng.h"
 #include "vector.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_events.h>
@@ -18,7 +17,6 @@
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
 #include <math.h>
-#include <stdint.h>
 #include <stdlib.h>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -26,7 +24,7 @@
 
 short is_running = -1;
 
-camera_t camera = {{0, 0, 0}, {0, 0, 1}, {0, 0, 0}, 0.0};
+camera_t camera = {{0, 0, 0}, {0, 0, 1}, {0, 0, 0}, 0.0, 0.0};
 float delta_time;
 mat4_t projection_matrix;
 
@@ -51,75 +49,76 @@ int backface_culling = 1;
 
 void process_input(void) {
   SDL_Event event;
-  SDL_PollEvent(&event);
-
-  switch (event.type) {
-  case SDL_QUIT:
-    is_running = -1;
-    break;
-  case SDL_KEYDOWN:
-    if (event.key.keysym.sym == SDLK_ESCAPE) {
+  while (SDL_PollEvent(&event)) {
+    switch (event.type) {
+    case SDL_QUIT:
       is_running = -1;
       break;
+    case SDL_KEYDOWN:
+      if (event.key.keysym.sym == SDLK_ESCAPE) {
+        is_running = -1;
+        break;
+      }
+      if (event.key.keysym.scancode == SDL_SCANCODE_C) {
+        backface_culling = 1;
+        break;
+      }
+      if (event.key.keysym.scancode == SDL_SCANCODE_X) {
+        backface_culling = 0;
+        break;
+      }
+      if (event.key.keysym.scancode == 30) {
+        renderOption = WIREFRAME_DOT;
+        break;
+      }
+      if (event.key.keysym.scancode == 31) {
+        renderOption = WIREFRAME_ONLY;
+        break;
+      }
+      if (event.key.keysym.scancode == 32) {
+        renderOption = FILL_ONLY;
+        break;
+      }
+      if (event.key.keysym.scancode == 33) {
+        renderOption = WIREFRAME_FILL;
+        break;
+      }
+      if (event.key.keysym.scancode == 34) {
+        renderOption = TEXTURED_ONLY;
+        break;
+      }
+      if (event.key.keysym.scancode == 35) {
+        renderOption = WIREFRAME_TEXTURED;
+        break;
+      }
+      if (event.key.keysym.scancode == SDL_SCANCODE_W) {
+        camera.pitch_angle += 3.0 * delta_time;
+        break;
+      }
+      if (event.key.keysym.scancode == SDL_SCANCODE_D) {
+        camera.yaw_angle -= 1.0 * delta_time;
+        break;
+      }
+      if (event.key.keysym.scancode == SDL_SCANCODE_A) {
+        camera.yaw_angle += 1.0 * delta_time;
+        break;
+      }
+      if (event.key.keysym.scancode == SDL_SCANCODE_S) {
+        camera.pitch_angle -= 3.0 * delta_time;
+        break;
+      }
+      if (event.key.keysym.scancode == SDL_SCANCODE_UP) {
+        camera.forward_velocity = vec3_mult(camera.direction, 5.0 * delta_time);
+        camera.position = vec3_add(camera.position, camera.forward_velocity);
+        break;
+      }
+      if (event.key.keysym.scancode == SDL_SCANCODE_DOWN) {
+        camera.forward_velocity = vec3_mult(camera.direction, 5.0 * delta_time);
+        camera.position = vec3_sub(camera.position, camera.forward_velocity);
+        break;
+      }
     }
-    if (event.key.keysym.scancode == SDL_SCANCODE_C) {
-      backface_culling = 1;
-      break;
-    }
-    if (event.key.keysym.scancode == SDL_SCANCODE_X) {
-      backface_culling = 0;
-      break;
-    }
-    if (event.key.keysym.scancode == 30) {
-      renderOption = WIREFRAME_DOT;
-      break;
-    }
-    if (event.key.keysym.scancode == 31) {
-      renderOption = WIREFRAME_ONLY;
-      break;
-    }
-    if (event.key.keysym.scancode == 32) {
-      renderOption = FILL_ONLY;
-      break;
-    }
-    if (event.key.keysym.scancode == 33) {
-      renderOption = WIREFRAME_FILL;
-      break;
-    }
-    if (event.key.keysym.scancode == 34) {
-      renderOption = TEXTURED_ONLY;
-      break;
-    }
-    if (event.key.keysym.scancode == 35) {
-      renderOption = WIREFRAME_TEXTURED;
-      break;
-    }
-    if (event.key.keysym.scancode == SDL_SCANCODE_W) {
-      camera.forward_velocity = vec3_mult(camera.direction, 5.0 * delta_time);
-      camera.position = vec3_add(camera.position, camera.forward_velocity);
-      break;
-    }
-    if (event.key.keysym.scancode == SDL_SCANCODE_D) {
-      camera.yaw_angle += 1.0 * delta_time;
-      break;
-    }
-    if (event.key.keysym.scancode == SDL_SCANCODE_A) {
-      camera.yaw_angle -= 1.0 * delta_time;
-      break;
-    }
-    if (event.key.keysym.scancode == SDL_SCANCODE_S) {
-      camera.forward_velocity = vec3_mult(camera.direction, 5.0 * delta_time);
-      camera.position = vec3_sub(camera.position, camera.forward_velocity);
-      break;
-    }
-    if (event.key.keysym.scancode == SDL_SCANCODE_UP) {
-      camera.position.y += 3.0 * delta_time;
-      break;
-    }
-    if (event.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-      camera.position.y -= 3.0 * delta_time;
-      break;
-    }
+    break;
   }
 }
 
@@ -132,11 +131,9 @@ void update(void) {
 
   previous_frame_time = SDL_GetTicks();
   num_triangles_to_render = 0;
-  // mesh.rotation.y += 0.08 * delta_time;
-  // mesh.rotation.z += 0.08 * delta_time;
-  // mesh.rotation.x += 0.08 * delta_time;
   mesh.translation.z = 4;
-
+  mesh.rotation.x += 0.8 * delta_time;
+  mesh.rotation.z += 0.8 * delta_time;
   mat4_t scale_matrix =
       mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
 
@@ -149,8 +146,11 @@ void update(void) {
 
   vec3_t target = {0, 0, 1};
   mat4_t camera_yaw_rotation = mat4_make_rotation_y(camera.yaw_angle);
+  mat4_t camera_pitch_rotation = mat4_make_rotation_x(camera.pitch_angle);
+
   camera.direction = vec3_from_vec4(
-      mat4_mul_vec4(camera_yaw_rotation, vec4_from_vec3(target)));
+      mat4_mul_vec4(mat4_mul_mat4(camera_pitch_rotation, camera_yaw_rotation),
+                    vec4_from_vec3(target)));
 
   target = vec3_add(camera.position, camera.direction);
   vec3_t up_direction = {0, 1, 0};
@@ -221,11 +221,11 @@ void update(void) {
 
         projected_points[j].y *= -1;
 
-        projected_points[j].x *= (window_width / 2.0);
-        projected_points[j].y *= (window_height / 2.0);
+        projected_points[j].x *= (get_window_width() / 2.0);
+        projected_points[j].y *= (get_window_height() / 2.0);
 
-        projected_points[j].x += (window_width / 2.0);
-        projected_points[j].y += (window_height / 2.0);
+        projected_points[j].x += (get_window_width() / 2.0);
+        projected_points[j].y += (get_window_height() / 2.0);
       }
 
       triangle_t projected_triangle = {
@@ -252,14 +252,8 @@ void update(void) {
 }
 
 void setup(char *obj_file, char *png_file) {
-  color_buffer =
-      (uint32_t *)calloc(window_width * window_height, sizeof(uint32_t));
-  color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
-                                           SDL_TEXTUREACCESS_STREAMING,
-                                           window_width, window_height);
-  z_buffer = (float *)malloc(sizeof(float) * window_width * window_height);
-  float aspectx = (float)window_width / (float)window_height;
-  float aspecty = (float)window_height / (float)window_width;
+  float aspectx = (float)get_window_width() / (float)get_window_height();
+  float aspecty = (float)get_window_height() / (float)get_window_width();
   float fovy = M_PI / 3.0;
   float fovx = aspectx * atan(tan(fovy / 2)) * 2;
   projection_matrix = mat4_make_perspective(fovy, aspecty, 1.0, 20.0);
@@ -274,7 +268,6 @@ void setup(char *obj_file, char *png_file) {
 }
 
 void render(void) {
-  draw_grid(50);
 
   for (int i = 0; i < num_triangles_to_render; i++) {
     triangle_t triangle = triangles_to_render[i];
@@ -300,16 +293,6 @@ void render(void) {
   render_color_buffer();
   clear_color_buffer(0xFF000000);
   clear_z_buffer();
-
-  SDL_RenderPresent(renderer);
-}
-
-void free_resources(void) {
-  free(color_buffer);
-  free(z_buffer);
-  upng_free(png_texture);
-  array_free(mesh.faces);
-  array_free(mesh.vertices);
 }
 
 int main(int argc, char **argv) {
