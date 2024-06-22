@@ -2,94 +2,40 @@
 #include "array.h"
 #include "texture.h"
 #include "triangle.h"
+#include "upng.h"
 #include "vector.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-mesh_t mesh = {NULL, NULL, NULL, NULL, {0, 0, 0}, {1.0, 1.0, 1.0}, {0, 0, 0}};
+#define MAX_NUM_MESHES 10
+static mesh_t meshes[MAX_NUM_MESHES];
+static int mesh_count = 0;
 
-vec3_t cube_vertices[N_CUBE_VERTICES] = {
-    {-1, -1, 1}, {1, -1, 1}, {-1, 1, 1},   {1, 1, 1},
-    {-1, 1, -1}, {1, 1, -1}, {-1, -1, -1}, {1, -1, -1},
-};
-
-// face_t cube_faces[N_CUBE_FACES] = {
-//     // front
-//     {1, 2, 3, 0xFFFF0000, .normals = {1, 1, 1}, .a_uv = {1, 0}, .b_uv = {0,
-//     0},
-//      .c_uv = {1, 1}},
-//     {3, 2, 4, 0xFFFF0000, .normals = {1, 1, 1}, .a_uv = {1, 1}, .b_uv = {0,
-//     0},
-//      .c_uv = {0, 1}},
-//     // right
-//     {3, 4, 5, 0xFF00FF00, .normals = {2, 2, 2}, .a_uv = {1, 0}, .b_uv = {0,
-//     0},
-//      .c_uv = {1, 1}},
-//     {5, 4, 6, 0xFF00FF00, .normals = {2, 2, 2}, .a_uv = {1, 1}, .b_uv = {0,
-//     0},
-//      .c_uv = {0, 1}},
-//     // back
-//     {5, 6, 7, 0xFF0000FF, .normals = {3, 3, 3}, .a_uv = {0, 1}, .b_uv = {1,
-//     1},
-//      .c_uv = {0, 0}},
-//     {7, 6, 8, 0xFF0000FF, .normals = {3, 3, 3}, .a_uv = {0, 0}, .b_uv = {1,
-//     1},
-//      .c_uv = {1, 0}},
-//     // left
-//     {7, 8, 1, 0xFFFFFF00, .normals = {4, 4, 4}, .a_uv = {1, 0}, .b_uv = {0,
-//     0},
-//      .c_uv = {1, 1}},
-//     {1, 8, 2, 0xFFFFFF00, .normals = {4, 4, 4}, .a_uv = {1, 1}, .b_uv = {0,
-//     0},
-//      .c_uv = {0, 1}},
-//     // top
-//     {2, 8, 4, 0xFFFF00FF, .normals = {5, 5, 5}, .a_uv = {1, 0}, .b_uv = {0,
-//     0},
-//      .c_uv = {1, 1}},
-//     {4, 8, 6, 0xFFFF00FF, .normals = {5, 5, 5}, .a_uv = {1, 1}, .b_uv = {0,
-//     0},
-//      .c_uv = {0, 1}},
-//     // bottom
-//     {7, 1, 5, 0xFF00FFFF, .normals = {6, 6, 6}, .a_uv = {1, 0}, .b_uv = {0,
-//     0},
-//      .c_uv = {1, 1}},
-//     {5, 1, 3, 0xFF00FFFF, .normals = {6, 6, 6}, .a_uv = {1, 1}, .b_uv = {0,
-//     0},
-//      .c_uv = {0, 1}}};
-//
-// vec3_t cube_normals[6] = {
-//     {0.000000, 0.000000, 1.000000},  {0.000000, 1.000000, 0.000000},
-//     {0.000000, 0.000000, -1.000000}, {0.000000, -1.000000, 0.000000},
-//     {1.000000, 0.000000, 0.000000},  {-1.000000, 0.000000, 0.000000}};
-//
-// void load_cube_mesh_data(void) {
-//   for (int i = 0; i < N_CUBE_VERTICES; i++) {
-//     vec3_t cube_vertex = cube_vertices[i];
-//     array_push(mesh.vertices, cube_vertex)
-//   }
-//   for (int i = 0; i < N_CUBE_FACES; i++) {
-//     face_t cube_face = cube_faces[i];
-//     array_push(mesh.faces, cube_face);
-//   }
-//   for (int i = 0; i < 6; i++) {
-//     vec3_t cube_normal = cube_normals[i];
-//     array_push(mesh.vertice_normals, cube_normal);
-//   }
-// }
-
-void parse_face(char *line) {
-  face_t face;
-  char *token1 = strtok(line, " ");
-  char *token2 = strtok(NULL, " ");
-  char *token3 = strtok(NULL, " ");
-  face.c = atoi(strtok(token3, "/"));
-  face.b = atoi(strtok(token2, "/"));
-  face.a = atoi(strtok(token1, "/"));
-  array_push(mesh.faces, face);
+void load_mesh(char *obj_filename, char *png_filename, vec3_t scale,
+               vec3_t translation, vec3_t rotation) {
+  load_mesh_obj_data(&meshes[mesh_count], obj_filename);
+  load_mesh_png_data(&meshes[mesh_count], png_filename);
+  meshes[mesh_count].scale = scale;
+  meshes[mesh_count].translation = translation;
+  meshes[mesh_count].rotation = rotation;
+  mesh_count++;
 }
 
-void load_mesh_from_file(char *filename) {
+void load_mesh_png_data(mesh_t *mesh, char *filename) {
+  upng_t *png_texture = upng_new_from_file(filename);
+  if (png_texture != NULL) {
+    upng_decode(png_texture);
+    if (upng_get_error(png_texture) == UPNG_EOK) {
+      mesh->texture = png_texture;
+    }
+  }
+}
+
+int get_num_meshes() { return mesh_count; }
+mesh_t *get_mesh_at(int index) { return &meshes[index]; }
+
+void load_mesh_obj_data(mesh_t *mesh, char *filename) {
   FILE *file = fopen(filename, "r");
   if (!file) {
     fprintf(stderr, "Failed loading file");
@@ -103,17 +49,17 @@ void load_mesh_from_file(char *filename) {
       if (line[1] == ' ') {
         vec3_t vertex;
         sscanf(&line[2], "%f %f %f", &vertex.x, &vertex.y, &vertex.z);
-        array_push(mesh.vertices, vertex);
+        array_push(mesh->vertices, vertex);
       }
       if (line[1] == 'n') {
         vec3_t normal;
         sscanf(&line[2], "%f %f %f", &normal.x, &normal.y, &normal.z);
-        array_push(mesh.vertice_normals, normal);
+        array_push(mesh->vertice_normals, normal);
       }
       if (line[1] == 't') {
         tex2_t texcoord;
         sscanf(&line[2], "%f %f", &texcoord.u, &texcoord.v);
-        array_push(mesh.texcoords, texcoord);
+        array_push(mesh->texcoords, texcoord);
       }
     }
     if (line[0] == 'f') {
@@ -132,7 +78,7 @@ void load_mesh_from_file(char *filename) {
           .texcoords = {texture_indices[0], texture_indices[1],
                         texture_indices[2]},
           .normals = {normal_indices[0], normal_indices[1], normal_indices[2]}};
-      array_push(mesh.faces, face);
+      array_push(mesh->faces, face);
     }
     continue;
   }

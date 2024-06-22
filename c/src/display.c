@@ -1,8 +1,12 @@
 #include "display.h"
-#include "texture.h"
+#include "array.h"
+#include "mesh.h"
 #include "upng.h"
+#include <SDL2/SDL_stdinc.h>
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -41,12 +45,13 @@ short initialize_window(void) {
 
   SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 
-  color_buffer =
-      (uint32_t *)calloc(window_width * window_height, sizeof(uint32_t));
+  color_buffer = (uint32_t *)_mm_malloc(
+      window_width * window_height * sizeof(uint32_t), 32);
   color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
                                            SDL_TEXTUREACCESS_STREAMING,
                                            window_width, window_height);
-  z_buffer = (float *)malloc(sizeof(float) * window_width * window_height);
+  z_buffer =
+      (float *)_mm_malloc(sizeof(float) * window_width * window_height, 32);
   return 0;
 }
 
@@ -72,14 +77,17 @@ void set_zbuffer_at(int x, int y, float value) {
 }
 
 void clear_color_buffer(uint32_t color) {
-  for (int i = 0; i < window_height * window_width; i++) {
-    color_buffer[i] = color;
+  __m256i value = _mm256_set1_epi32(color);
+  for (int i = 0; i < window_height * window_width; i += 8) {
+    _mm256_store_si256((__m256i *)(color_buffer + i), value);
   }
 }
 
 void clear_z_buffer(void) {
-  for (int i = 0; i < window_width * window_height; i++)
-    z_buffer[i] = 1.0;
+  __m256 value = _mm256_set1_ps(1.0);
+  for (int i = 0; i < window_width * window_height; i += 8) {
+    _mm256_store_ps(z_buffer + i, value);
+  }
 }
 
 void draw_grid(int multiple) {
@@ -122,7 +130,14 @@ void draw_rectangle(int x, int y, int width, int height, uint32_t color) {
 void destroy_window(void) {
   free(color_buffer);
   free(z_buffer);
-  upng_free(png_texture);
+  for (int i = 0; i < get_num_meshes(); i++) {
+    mesh_t *mesh = get_mesh_at(i);
+    array_free(mesh->faces);
+    array_free(mesh->texcoords);
+    array_free(mesh->vertices);
+    array_free(mesh->vertice_normals);
+    upng_free(mesh->texture);
+  }
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();

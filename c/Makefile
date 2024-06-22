@@ -1,5 +1,5 @@
 build:
-	clang -Wall -g -std=c99 ./src/*.c -lSDL2 -lm -o renderer
+	clang -Wall -g -pg -march=native -std=c99 ./src/*.c -lSDL2 -lm -o renderer
 
 build-prod:
 	clang -Wall -O3 -march=native -std=c99 ./src/*.c -lSDL2 -lm -o renderer

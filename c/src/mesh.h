@@ -3,12 +3,10 @@
 
 #include "texture.h"
 #include "triangle.h"
+#include "upng.h"
 #include "vector.h"
 #define N_CUBE_VERTICES 8
 #define N_CUBE_FACES 12
-
-extern vec3_t cube_vertices[N_CUBE_VERTICES];
-extern face_t cube_faces[N_CUBE_FACES];
 
 typedef struct {
   vec3_t *vertices;
@@ -18,10 +16,13 @@ typedef struct {
   vec3_t rotation;
   vec3_t scale;
   vec3_t translation;
+  upng_t *texture;
 } mesh_t;
 
-extern mesh_t mesh;
-
-void load_cube_mesh_data();
-void load_mesh_from_file(char *filename);
+void load_mesh(char *obj_filename, char *png_filename, vec3_t scale,
+               vec3_t translation, vec3_t rotation);
+void load_mesh_obj_data(mesh_t *mesh, char *filename);
+void load_mesh_png_data(mesh_t *mesh, char *filename);
+int get_num_meshes();
+mesh_t *get_mesh_at(int index);
 #endif

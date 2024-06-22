@@ -2,6 +2,7 @@
 #include "display.h"
 #include "lighting.h"
 #include "texture.h"
+#include "upng.h"
 #include "vector.h"
 #include <math.h>
 #include <stdint.h>
@@ -40,7 +41,7 @@ float two_points_distance(vec4_t a, vec4_t b) {
   return sqrtf((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-void draw_texel(int x, int y, uint32_t *texture, triangle_t triangle) {
+void draw_texel(int x, int y, triangle_t triangle) {
   vec3_t weights = barycentric_weights(
       (vec2_t){triangle.points[0].x, triangle.points[0].y},
       (vec2_t){triangle.points[1].x, triangle.points[1].y},
@@ -66,8 +67,10 @@ void draw_texel(int x, int y, uint32_t *texture, triangle_t triangle) {
   interpolated_u /= interpolated_reciprocal_w;
   interpolated_v /= interpolated_reciprocal_w;
 
-  int tex_x = abs((int)(interpolated_u * (texture_width)));
-  int tex_y = abs((int)(interpolated_v * (texture_height)));
+  int texture_height = upng_get_height(triangle.texture);
+  int texture_width = upng_get_width(triangle.texture);
+  int tex_x = abs((int)(interpolated_u * texture_width));
+  int tex_y = abs((int)(interpolated_v * texture_height));
   float intensity = triangle.intensities[0] * weights.x +
                     triangle.intensities[1] * weights.y +
                     triangle.intensities[2] * weights.z;
@@ -77,15 +80,17 @@ void draw_texel(int x, int y, uint32_t *texture, triangle_t triangle) {
       get_window_width() * y + x < get_window_width() * get_window_height() &&
       get_zbuffer_at(x, y) >= interpolated_reciprocal_w) {
     set_zbuffer_at(x, y, interpolated_reciprocal_w);
-    uint32_t color = texture == NULL
-                         ? triangle.color
-                         : texture[((texture_width * tex_y) + tex_x) %
-                                   (texture_height * texture_width)];
+    uint32_t color =
+        triangle.texture == NULL
+            ? triangle.color
+            : ((uint32_t *)upng_get_buffer(
+                  triangle.texture))[((texture_width * tex_y) + tex_x) %
+                                     (texture_height * texture_width)];
     draw_pixel(x, y, light_apply_intensity(color, intensity));
   }
 }
 
-void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
+void draw_textured_triangle(triangle_t triangle) {
   if (triangle.points[0].y > triangle.points[1].y) {
     vec4_swap(&triangle.points[0], &triangle.points[1]);
     float_swap(&triangle.intensities[0], &triangle.intensities[1]);
@@ -126,7 +131,7 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
         int_swap(&x_start, &x_end);
       }
       for (float x = x_start; x <= x_end; x++) {
-        draw_texel(x, y, texture, triangle);
+        draw_texel(x, y, triangle);
       }
     }
 
@@ -151,7 +156,7 @@ void draw_textured_triangle(triangle_t triangle, uint32_t *texture) {
         int_swap(&x_start, &x_end);
       }
       for (float x = x_start; x <= x_end; x++) {
-        draw_texel(x, y, texture, triangle);
+        draw_texel(x, y, triangle);
       }
     }
 };

@@ -3,6 +3,7 @@
 
 #include "lighting.h"
 #include "texture.h"
+#include "upng.h"
 #include "vector.h"
 #include <stdint.h>
 typedef struct {
@@ -19,8 +20,9 @@ typedef struct {
   tex2_t texcoords[3];
   uint32_t color;
   float intensities[3];
+  upng_t *texture;
 } triangle_t;
 
-void draw_textured_triangle(triangle_t triangle, uint32_t *texture);
+void draw_textured_triangle(triangle_t triangle);
 
 #endif
