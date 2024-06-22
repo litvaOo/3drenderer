@@ -12,13 +12,14 @@ static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static uint32_t *color_buffer = NULL;
 static float *z_buffer = NULL;
-static int window_width = 320;
-static int window_height = 200;
+static int window_width;
+static int window_height;
 static SDL_Texture *color_buffer_texture = NULL;
+static int buffer_size;
 
 int get_window_width(void) { return window_width; }
 int get_window_height(void) { return window_height; }
-
+int get_buffer_size(void) { return buffer_size; }
 short initialize_window(void) {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
     fprintf(stderr, "Error initializing SDL.\n");
@@ -29,6 +30,7 @@ short initialize_window(void) {
   SDL_GetCurrentDisplayMode(0, &display_mode);
   window_width = display_mode.w;
   window_height = display_mode.h;
+  buffer_size = window_height * window_width;
   window =
       SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                        window_width, window_height, SDL_WINDOW_BORDERLESS);
@@ -78,22 +80,16 @@ void set_zbuffer_at(int x, int y, float value) {
 
 void clear_color_buffer(uint32_t color) {
   __m256i value = _mm256_set1_epi32(color);
-  for (int i = 0; i < window_height * window_width; i += 8) {
+  for (int i = 0; i < buffer_size; i += 8) {
     _mm256_store_si256((__m256i *)(color_buffer + i), value);
   }
 }
 
 void clear_z_buffer(void) {
   __m256 value = _mm256_set1_ps(1.0);
-  for (int i = 0; i < window_width * window_height; i += 8) {
+  for (int i = 0; i < buffer_size; i += 8) {
     _mm256_store_ps(z_buffer + i, value);
   }
-}
-
-void draw_grid(int multiple) {
-  for (int y = 0; y < window_height; y += multiple)
-    for (int x = 0; x < window_width; x += multiple)
-      color_buffer[window_width * y + x] = 0xFFAAAAAA;
 }
 
 void draw_line(int x0, int y0, int x1, int y1, uint32_t color) {

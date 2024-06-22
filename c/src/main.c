@@ -274,9 +274,6 @@ void render(void) {
 
   for (int i = 0; i < num_triangles_to_render; i++) {
     triangle_t triangle = triangles_to_render[i];
-    if (renderOption == WIREFRAME_FILL || renderOption == FILL_ONLY) {
-      draw_textured_triangle(triangle);
-    }
     if (renderOption == TEXTURED_ONLY || renderOption == WIREFRAME_TEXTURED) {
       draw_textured_triangle(triangle);
     }

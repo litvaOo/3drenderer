@@ -22,7 +22,7 @@ void draw_triangle(int x0, int y0, int x1, int y1, int x2, int y2,
 void clear_z_buffer(void);
 int get_window_width(void);
 int get_window_height(void);
-
+int get_buffer_size(void);
 float get_zbuffer_at(int x, int y);
 void set_zbuffer_at(int x, int y, float value);
 #endif
