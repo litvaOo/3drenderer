@@ -36,8 +36,6 @@ void tex2_swap(tex2_t *a, tex2_t *b) {
   *b = tmp;
 }
 
-float lerp(float v0, float v1, float t) { return (1 - t) * v0 + t * v1; }
-
 float two_points_distance(vec4_t a, vec4_t b) {
   return sqrtf((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }

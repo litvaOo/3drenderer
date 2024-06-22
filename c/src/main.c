@@ -1,5 +1,6 @@
 #include "array.h"
 #include "camera.h"
+#include "clipping.h"
 #include "display.h"
 #include "lighting.h"
 #include "matrix.h"
@@ -131,9 +132,9 @@ void update(void) {
 
   previous_frame_time = SDL_GetTicks();
   num_triangles_to_render = 0;
-  mesh.rotation.y += 0.08 * delta_time;
-  mesh.rotation.z += 0.08 * delta_time;
-  mesh.rotation.x += 0.08 * delta_time;
+  // mesh.rotation.y += 0.08 * delta_time;
+  // mesh.rotation.z += 0.08 * delta_time;
+  // mesh.rotation.x += 0.08 * delta_time;
   mesh.translation.z = 4;
 
   mat4_t scale_matrix =
@@ -199,38 +200,53 @@ void update(void) {
     if (backface_culling == 1 && vec3_dot(N, CR) < 0)
       continue;
 
-    vec4_t projected_points[3];
-    for (int j = 0; j < 3; j++) {
-      projected_points[j] = mat4_mul_vec4_project(
-          projection_matrix, vec4_from_vec3(face_vertices[j]));
+    polygon_t polygon = create_polygon_from_triangle(
+        face_vertices[0], face_vertices[1], face_vertices[2],
+        mesh.texcoords[mesh_face.texcoords[0] - 1],
+        mesh.texcoords[mesh_face.texcoords[1] - 1],
+        mesh.texcoords[mesh_face.texcoords[2] - 1]);
+    clip_polygon(&polygon);
 
-      projected_points[j].y *= -1;
+    triangle_t triangles_after_clipping[MAX_NUM_TRIANGLES];
+    int num_triangles_after_clipping = 0;
 
-      projected_points[j].x *= (window_width / 2.0);
-      projected_points[j].y *= (window_height / 2.0);
+    triangles_from_polygon(&polygon, triangles_after_clipping,
+                           &num_triangles_after_clipping);
 
-      projected_points[j].x += (window_width / 2.0);
-      projected_points[j].y += (window_height / 2.0);
-    }
+    for (int t = 0; t < num_triangles_after_clipping; t++) {
+      vec4_t projected_points[3];
+      for (int j = 0; j < 3; j++) {
+        projected_points[j] = mat4_mul_vec4_project(
+            projection_matrix, triangles_after_clipping[t].points[j]);
 
-    triangle_t projected_triangle = {
-        .points =
-            {
-                projected_points[0],
-                projected_points[1],
-                projected_points[2],
-            },
+        projected_points[j].y *= -1;
 
-        .texcoords = {mesh.texcoords[mesh_face.texcoords[0] - 1],
-                      mesh.texcoords[mesh_face.texcoords[1] - 1],
-                      mesh.texcoords[mesh_face.texcoords[2] - 1]},
-        .color = mesh_face.color,
-        .intensities = {vec3_dot(normals[0], light.direction),
-                        vec3_dot(normals[1], light.direction),
-                        vec3_dot(normals[2], light.direction)},
-    };
-    if (num_triangles_to_render < MAX_TRIANGLES_PER_MESH) {
-      triangles_to_render[num_triangles_to_render++] = projected_triangle;
+        projected_points[j].x *= (window_width / 2.0);
+        projected_points[j].y *= (window_height / 2.0);
+
+        projected_points[j].x += (window_width / 2.0);
+        projected_points[j].y += (window_height / 2.0);
+      }
+
+      triangle_t projected_triangle = {
+          .points =
+              {
+                  projected_points[0],
+                  projected_points[1],
+                  projected_points[2],
+              },
+
+          .texcoords = {triangles_after_clipping[t].texcoords[0],
+                        triangles_after_clipping[t].texcoords[1],
+                        triangles_after_clipping[t].texcoords[2]},
+          .color = mesh_face.color,
+          .intensities = {vec3_dot(normals[0], light.direction),
+                          vec3_dot(normals[1], light.direction),
+                          vec3_dot(normals[2], light.direction)},
+      };
+      if (num_triangles_to_render < MAX_TRIANGLES_PER_MESH) {
+        triangles_to_render[num_triangles_to_render++] = projected_triangle;
+      }
     }
   }
 }
@@ -242,12 +258,15 @@ void setup(char *obj_file, char *png_file) {
                                            SDL_TEXTUREACCESS_STREAMING,
                                            window_width, window_height);
   z_buffer = (float *)malloc(sizeof(float) * window_width * window_height);
-  float fov = M_PI / 3.0;
-  projection_matrix = mat4_make_perspective(
-      fov, (float)window_height / (float)window_width, 0.1, 100.0);
+  float aspectx = (float)window_width / (float)window_height;
+  float aspecty = (float)window_height / (float)window_width;
+  float fovy = M_PI / 3.0;
+  float fovx = aspectx * atan(tan(fovy / 2)) * 2;
+  projection_matrix = mat4_make_perspective(fovy, aspecty, 1.0, 20.0);
   light.direction.z = -1;
   light.direction.y = 0;
   light.direction.x = 0;
+  initialize_frustum_plane(fovx, fovy, 1.0, 20);
   vec3_normalize(&light.direction);
 
   load_png_texture_data(png_file);
